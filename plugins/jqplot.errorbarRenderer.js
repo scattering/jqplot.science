@@ -255,7 +255,7 @@
                 if (yu != null)
                   // draw upper bound horizontal line
                   r.shapeRenderer.draw(ctx, [[x+r._tickLength/2, yu], [x-r._tickLength/2, yu]], opts);
-                if (d[i][2].xerr[1])
+                if (xu != null)
                   // draw upper bound vertical line
                   r.shapeRenderer.draw(ctx, [[xu, y+r._tickLength/2], [xu, y-r._tickLength/2]], opts);
                 
@@ -263,10 +263,10 @@
                 if (r.closeColor) {
                     opts.color = r.closeColor;
                 }
-                if (d[i][2].yerr[0])
+                if (yl != null)
                   // draw lower bound horizontal line
                   r.shapeRenderer.draw(ctx, [[x+r._tickLength/2, yl], [x-r._tickLength/2, yl]], opts);
-                if (d[i][2].xerr[0])
+                if (xl != null)
                   // draw lower bound vertical line
                   r.shapeRenderer.draw(ctx, [[xl, y+r._tickLength/2], [xl, y-r._tickLength/2]], opts);
                 

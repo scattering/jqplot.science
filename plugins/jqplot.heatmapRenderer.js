@@ -35,9 +35,10 @@
     $.jqplot.heatmapRenderer.prototype.constructor = $.jqplot.heatmapRenderer;
     
     // called with scope of a series
-    $.jqplot.heatmapRenderer.prototype.init = function(options) {
+    $.jqplot.heatmapRenderer.prototype.init = function(options, plot) {
         // Group: Properties
         //
+        
         
         // prop: palette
         // palette to convert values to colors: default is "jet" (defined below in this file)
@@ -52,7 +53,9 @@
                      ymin:0, ymax:ydim, ydim: ydim,
                      zmin: 0, zmax: 1};
         this.transform = 'lin';
+        this.auto_histogram = false;
         $.extend(true, this, options);
+        this._plot = plot;
         this._colorbar = null; // colorbar will hook in when initialized;
         
         // need to create a canvas to draw on...
@@ -75,10 +78,14 @@
         this.generate_cumsums = generate_cumsums;
         this.set_data = set_data;
         this.zoom_to = zoom_to;
+        var that = this;
+        if (plot.plugins.cursor) {
+            plot.plugins.cursor.resetZoom = function() { that.zoom_to(); plot.redraw(); }
+        }
+
         this.set_transform(this.transform);
         this.set_data(this.data, this.dims);
         this.update_plotdata();
-        console.log("heatmap",this);
     };
     
             
@@ -316,9 +323,11 @@
                         [this.dims.xmax, this.dims.ymax],
                         [this.dims.xmin, this.dims.ymax]];
         this.update_plotdata();
-        var hists = this.generate_histogram();
-        this.hist = hists.hist;
-        this.fullhist = hists.fullhist;
+        if (this.auto_histogram) {
+            var hists = this.generate_histogram();
+            this.hist = hists.hist;
+            this.fullhist = hists.fullhist;
+        }
     };
     
     function set_transform(tform) {
@@ -357,6 +366,12 @@
         if ('xmax' in limits) this._xaxis.max = limits.xmax;
         if ('ymin' in limits) this._yaxis.min = limits.ymin;
         if ('ymax' in limits) this._yaxis.max = limits.ymax;
+        this._xaxis.tickInterval = null;
+        this._yaxis.tickInterval = null;
+    };
+    
+    function resetZoom() {
+        this.zoom_to();
     };
     
     function generate_histogram() {

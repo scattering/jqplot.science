@@ -252,7 +252,7 @@
                 if (r.openColor) {
                     opts.color = r.openColor;
                 }
-                if (d[i][2].yerr[1])
+                if (yu != null)
                   // draw upper bound horizontal line
                   r.shapeRenderer.draw(ctx, [[x+r._tickLength/2, yu], [x-r._tickLength/2, yu]], opts);
                 if (d[i][2].xerr[1])

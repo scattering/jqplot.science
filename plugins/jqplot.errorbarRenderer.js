@@ -160,9 +160,7 @@
     
     // called within scope of series.
     $.jqplot.errorbarRenderer.prototype.draw = function(ctx, gd, options) {
-        //if (this.showLine == true) {
-            $.jqplot.LineRenderer.prototype.draw.call(this, ctx, gd, options);
-        //}    
+        $.jqplot.LineRenderer.prototype.draw.call(this, ctx, gd, options);
         if (this.renderer.errorBar == true) {
             var d = this.data;
             var xmin = this._xaxis.min;

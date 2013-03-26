@@ -88,10 +88,6 @@
         // prop: showLine
         // true to plot the line with LineRenderer on the series data
         // defaults to true
-        this.showLine = true;
-        // prop: errorBar
-        // true to render error bars
-        // Must be specified manually.
         this.errorBar = false;
         // prop: lineWidth
         // Width of the hi-low line and open/close ticks.
@@ -164,10 +160,10 @@
     
     // called within scope of series.
     $.jqplot.errorbarRenderer.prototype.draw = function(ctx, gd, options) {
-        if (this.showLine == true) {
+        //if (this.showLine == true) {
             $.jqplot.LineRenderer.prototype.draw.call(this, ctx, gd, options);
-        }    
-        if (this.errorBar == true) {
+        //}    
+        if (this.renderer.errorBar == true) {
             var d = this.data;
             var xmin = this._xaxis.min;
             var xmax = this._xaxis.max;

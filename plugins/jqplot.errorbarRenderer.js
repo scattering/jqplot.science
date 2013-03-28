@@ -180,6 +180,9 @@
         if (this.renderer.errorBar) {
             this._xaxis.resetDataBounds = newResetDataBounds;
             this._yaxis.resetDataBounds = newResetDataBounds;
+            
+            this._xaxis.resetDataBounds(); 
+            this._yaxis.resetDataBounds();
         }
         
     };

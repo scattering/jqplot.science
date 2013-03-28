@@ -301,37 +301,59 @@
     };
     
     function newResetDataBounds() {
-            // overriding for the axes
-            var db = this._dataBounds;
-            for (var i=0; i<this._series.length; i++) {
-                var s = this._series[i];
-                var d = s._plotData;
-                if (s.renderer.errorBar) {
-                  // Loop through all points
-                  for (var j=0; j<d.length; j++) {
-                    // First set xupper, xlower, yupper, ylower
-                    // Then adjust axis ranges if necessary
-                  
-                    var eb = d[j][2];
-                    if (this.name == 'xaxis' || this.name == 'x2axis') {
-                        if (eb.xlower < db.min || db.min == null) {
-                            db.min = eb.xlower;
-                        }
-                        if (eb.xupper > db.max || db.max == null) {
-                            db.max = eb.xupper;
-                        }
-                    } else { // it's a y-axis
-                        if (eb.ylower < db.min || db.min == null) {
-                            db.min = eb.ylower;
-                        }
-                        if (eb.yupper > db.max || db.max == null) {
-                            db.max = eb.yupper;
-                        }
+        // overriding for the axes
+        var db = this._dataBounds;
+        var xlower, xupper, ylower, yupper;
+        for (var i=0; i<this._series.length; i++) {
+            var s = this._series[i];
+            var d = s._plotData;
+            if (s.renderer.errorBar) {
+              // Loop through all points
+              for (var j=0; j<d.length; j++) {
+                // First set xupper, xlower, yupper, ylower
+                // Then adjust axis ranges if necessary
+              
+                var eb = d[j][2];
+                
+                if (this.name == 'xaxis' || this.name == 'x2axis') {
+                    if (eb.xerr) {
+                      // If symmetric
+                      if (isNumeric(eb.xerr)) {
+                        eb.xerr = [eb.xerr, eb.xerr];
+                      }
+                      if (jQuery.isArray(eb.xerr)) {
+                        eb.xlower = d[j][0] - eb.xerr[0];
+                        eb.xupper = d[j][0] + eb.xerr[1];
+                      }
                     }
-                  }
+                    if (eb.xlower < db.min || db.min == null) {
+                        db.min = eb.xlower;
+                    }
+                    if (eb.xupper > db.max || db.max == null) {
+                        db.max = eb.xupper;
+                    }
+                } else { // it's a y-axis
+                    if (eb.yerr) {
+                      // If symmetric
+                      if (isNumeric(eb.yerr)) {
+                        eb.yerr = [eb.yerr, eb.yerr];
+                      }
+                      if (jQuery.isArray(eb.yerr)) {
+                        eb.ylower = d[j][1] - eb.yerr[0];
+                        eb.yupper = d[j][1] + eb.yerr[1];
+                      }
+                    }
+                    if (eb.ylower < db.min || db.min == null) {
+                        db.min = eb.ylower;
+                    }
+                    if (eb.yupper > db.max || db.max == null) {
+                        db.max = eb.yupper;
+                    }
                 }
+              }
             }
         }
+    }
     
     //$.jqplot.preInitHooks.push($.jqplot.errorbarRenderer.checkOptions);
     //$.jqplot.postInitHooks.push($.jqplot.errorbarRenderer.alterResetScale);

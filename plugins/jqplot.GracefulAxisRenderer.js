@@ -49,8 +49,26 @@
         // we're are operating on an axis here
         // called with axis as scope
         var db = this._dataBounds;
-        min = ((this.min != null) ? this.min : db.min);
-        max = ((this.max != null) ? this.max : db.max);
+        var initial_min = 0.0;
+        var initial_max = 0.0;
+        if (this.min == null || this.max == null) {
+            // will be true when first plotted       
+            var range = Math.abs(db.max - db.min);
+            if (range == 0.0) {
+                range = Math.max(Math.abs(db.max), Math.abs(db.min));
+                // take the value of the single point as the range
+            }
+            if (range == 0.0) { 
+                // if min == max == 0, give the graph some arbitrary width.
+                range = 1.0;
+            }
+            
+            initial_min = db.min - range * 0.15; // 15% past databounds
+            initial_max = db.max + range * 0.15; // make this an option?
+        }
+            
+        var min = ((this.min != null) ? this.min : initial_min);
+        var max = ((this.max != null) ? this.max : initial_max);
         var ticks = generate_ticks({min: min, max: max});
         this.ticks = ticks;
         $.jqplot.LinearAxisRenderer.prototype.createTicks.call(this, plot);

@@ -140,7 +140,8 @@
                 eb.yupper = d[j][1] + eb.yerr[1];
               }
             }
-         }   
+          }
+        }   
         
         // set the yaxis data bounds here to account for hi and low values
         function newResetDataBounds() {
@@ -176,8 +177,10 @@
             }
         }
         
-        this._xaxis.resetDataBounds = newResetDataBounds;
-        this._yaxis.resetDataBounds = newResetDataBounds;
+        if (this.renderer.errorBar) {
+            this._xaxis.resetDataBounds = newResetDataBounds;
+            this._yaxis.resetDataBounds = newResetDataBounds;
+        }
         
     };
     

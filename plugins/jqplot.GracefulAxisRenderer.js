@@ -51,6 +51,7 @@
         var ticks = generate_ticks({min: this.min, max: this.max});
         this.ticks = ticks;
         return $.jqplot.LinearAxisRenderer.prototype.call(this, plot);
+    }
     
     $.jqplot.preDrawHooks.push($.jqplot.GracefulAxisRenderer.init);
     

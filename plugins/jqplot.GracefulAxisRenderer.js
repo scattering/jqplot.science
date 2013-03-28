@@ -48,7 +48,10 @@
     $.jqplot.GracefulAxisRenderer.prototype.createTicks = function(plot) {
         // we're are operating on an axis here
         // called with axis as scope
-        var ticks = generate_ticks({min: this.min, max: this.max});
+        var db = this._dataBounds;
+        min = ((this.min != null) ? this.min : db.min);
+        max = ((this.max != null) ? this.max : db.max);
+        var ticks = generate_ticks({min: min, max: max});
         this.ticks = ticks;
         $.jqplot.LinearAxisRenderer.prototype.createTicks.call(this, plot);
     }

@@ -42,7 +42,7 @@
     $.jqplot.GracefulAxisRenderer = function() {
     };
     
-    $.jqplot.GracefulAxisRenderer.prototype = new LinearAxisRenderer();
+    $.jqplot.GracefulAxisRenderer.prototype = new $.jqplot.LinearAxisRenderer();
     $.jqplot.GracefulAxisRenderer.prototype.constructor = $.jqplot.GracefulAxisRenderer
     
     $.jqplot.GracefulAxisRenderer.prototype.createTicks = function(plot) {

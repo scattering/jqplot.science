@@ -109,10 +109,10 @@
         this.lineWidth = options.lineWidth || 1.5;
         $.jqplot.LineRenderer.prototype.init.call(this, options);
         this._type = 'errorbar';
-        // set the yaxis data bounds here to account for hi and low values
         var dbx = this._xaxis._dataBounds;
         var dby = this._yaxis._dataBounds;
         var d = this._plotData;
+        
         if (this.renderer.errorBar) {
           // Loop through all points
           for (var j=0; j<d.length; j++) {
@@ -140,21 +140,44 @@
                 eb.yupper = d[j][1] + eb.yerr[1];
               }
             }
-            
-            if (eb.xlower < dbx.min || dbx.min == null) {
-                dbx.min = eb.xlower;
+         }   
+        
+        // set the yaxis data bounds here to account for hi and low values
+        function newResetDataBounds() {
+            // overriding for the axes
+            var db = this._dataBounds;
+            for (var i=0; i<this._series.length; i++) {
+                var s = this._series[i];
+                var d = s._plotData;
+                if (s.renderer.errorBar) {
+                  // Loop through all points
+                  for (var j=0; j<d.length; j++) {
+                    // First set xupper, xlower, yupper, ylower
+                    // Then adjust axis ranges if necessary
+                  
+                    var eb = d[j][2];
+                    if (this.name == 'xaxis' || this.name == 'x2axis') {
+                        if (eb.xlower < db.min || db.min == null) {
+                            db.min = eb.xlower;
+                        }
+                        if (eb.xupper > db.max || db.max == null) {
+                            db.max = eb.xupper;
+                        }
+                    } else { // it's a y-axis
+                        if (eb.ylower < db.min || db.min == null) {
+                            db.min = eb.ylower;
+                        }
+                        if (eb.yupper > db.max || db.max == null) {
+                            db.max = eb.yupper;
+                        }
+                    }
+                  }
+                }
             }
-            if (eb.xupper > dbx.max || dbx.max == null) {
-                dbx.max = eb.xupper;
-            }
-            if (eb.ylower < dby.min || dby.min == null) {
-                dby.min = eb.ylower;
-            }
-            if (eb.yupper > dby.max || dby.max == null) {
-                dby.max = eb.yupper;
-            }
-          }
         }
+        
+        this._xaxis.resetDataBounds = newResetDataBounds;
+        this._yaxis.resetDataBounds = newResetDataBounds;
         
     };
     
@@ -307,5 +330,6 @@
     };
     
     //$.jqplot.preInitHooks.push($.jqplot.errorbarRenderer.checkOptions);
+    //$.jqplot.postInitHooks.push($.jqplot.errorbarRenderer.alterResetScale);
     
 })(jQuery);    

@@ -114,34 +114,6 @@
         var d = this._plotData;
         
         if (this.renderer.errorBar) {
-          // Loop through all points
-          for (var j=0; j<d.length; j++) {
-            // First set xupper, xlower, yupper, ylower
-            // Then adjust axis ranges if necessary
-          
-            var eb = d[j][2];
-            if (eb.xerr) {
-              // If symmetric
-              if (isNumeric(eb.xerr)) {
-                eb.xerr = [eb.xerr, eb.xerr];
-              }
-              if (jQuery.isArray(eb.xerr)) {
-                eb.xlower = d[j][0] - eb.xerr[0];
-                eb.xupper = d[j][0] + eb.xerr[1];
-              }
-            }
-            if (eb.yerr) {
-              // If symmetric
-              if (isNumeric(eb.yerr)) {
-                eb.yerr = [eb.yerr, eb.yerr];
-              }
-              if (jQuery.isArray(eb.yerr)) {
-                eb.ylower = d[j][1] - eb.yerr[0];
-                eb.yupper = d[j][1] + eb.yerr[1];
-              }
-            }
-          }
-          
           this._xaxis.resetDataBounds = newResetDataBounds;
           this._yaxis.resetDataBounds = newResetDataBounds;
         

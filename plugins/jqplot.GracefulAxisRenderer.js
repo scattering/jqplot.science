@@ -30,7 +30,7 @@
 
 /**
  * Class: jqplot.GracefulAxisRenderer
- * Author: Brian Maranville and Paul Kienzle
+ * Authors: Brian Maranville (and Paul Kienzle?)
  * 03/2013
  * this program was created as part of the regular duties of a US government
  * employee, and is in the public domain
@@ -48,6 +48,15 @@
     $.jqplot.GracefulAxisRenderer.prototype.createTicks = function(plot) {
         // we're are operating on an axis here
         // called with axis as scope
+        var width = plot.grid._width;
+        var height = plot.grid._height;
+        var name = this.name; // xaxis, x2axis, yaxis, y2axis...
+        var fontSize;
+        if (plot.options.axes[name].tickOptions && plot.options.axes[name].tickOptions.fontSize) {
+            fontSize = plot.options.axes[name].tickOptions.fontSize;
+        } else {
+            fontSize = '10pt';
+        }
         var db = this._dataBounds;
         var initial_min = 0.0;
         var initial_max = 0.0;
@@ -69,7 +78,7 @@
             
         var min = ((this.min != null) ? this.min : initial_min);
         var max = ((this.max != null) ? this.max : initial_max);
-        var ticks = generate_ticks({min: min, max: max});
+        var ticks = generate_ticks({min: min, max: max}, width, height, name, fontSize);
         this.ticks = ticks;
         $.jqplot.LinearAxisRenderer.prototype.createTicks.call(this, plot);
     }

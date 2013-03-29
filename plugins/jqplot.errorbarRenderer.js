@@ -275,6 +275,8 @@
     function newResetDataBounds() {
         // overriding for the axes
         var db = this._dataBounds;
+        db.min = null;
+        db.max = null;
         var xlower, xupper, ylower, yupper;
         for (var i=0; i<this._series.length; i++) {
             var s = this._series[i];

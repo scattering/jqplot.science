@@ -19,7 +19,7 @@
        
         $.extend(true, this, options);
         this.transform = this.parent_plot.transform;
-        console.log("parent",this.parent_plot);
+        //console.log("parent",this.parent_plot);
         this.dims = this.parent_plot.dims;
         this.palette_array = this.parent_plot.palette_array;
         

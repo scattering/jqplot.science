@@ -108,18 +108,21 @@
         ticks.push([min, ' ']);
         var tick = min - mod(min, tickInterval) + tickInterval;
         while (tick < max) {
-            if (Math.abs(tick) < 1e-13) tick = 0;
-            var sigdigits = Math.ceil(Math.log(Math.abs(tick)/magnitude)/Math.LN10) - 1;
-            var numdigits = Math.floor(Math.log(Math.abs(tick))/Math.LN10) + 1;
-            if (sigdigits > 20) sigdigits = 20;
-            if (sigdigits < 0) sigdigits = 0;
-            if (numdigits < 4 && numdigits >= -2) {
-                var fixeddigits;
-                if (sigdigits < numdigits) { fixeddigits = 0; }
-                else { fixeddigits = sigdigits - numdigits + 1; }
-                ticks.push([tick, tick.toFixed(fixeddigits)]);
-            } else {
-                ticks.push([tick, tick.toExponential(sigdigits)]);
+            if (Math.abs(tick) < 1e-13) {
+                ticks.push([0, "0"]);
+            } else { 
+                var sigdigits = Math.ceil(Math.log(Math.abs(tick)/magnitude)/Math.LN10) - 1;
+                var numdigits = Math.floor(Math.log(Math.abs(tick))/Math.LN10) + 1;
+                if (sigdigits > 20) sigdigits = 20;
+                if (sigdigits < 0) sigdigits = 0;
+                if (numdigits < 4 && numdigits >= -2) {
+                    var fixeddigits;
+                    if (sigdigits < numdigits) { fixeddigits = 0; }
+                    else { fixeddigits = sigdigits - numdigits + 1; }
+                    ticks.push([tick, tick.toFixed(fixeddigits)]);
+                } else {
+                    ticks.push([tick, tick.toExponential(sigdigits)]);
+                }
             }
             tick += tickInterval;
         }

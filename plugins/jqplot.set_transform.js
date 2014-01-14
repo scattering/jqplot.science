@@ -47,6 +47,7 @@
     
     function handleTransform(a,b,c,d,e) {
         console.log(a,b,c,d,e);
+        this.set_transform = set_transform;
     }
     $.jqplot.postParseOptionsHooks.push(handleTransform);
        

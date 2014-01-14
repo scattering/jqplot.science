@@ -114,14 +114,17 @@
                 var sigdigits = Math.ceil(Math.log(Math.abs(tick)/magnitude)/Math.LN10) - 1;
                 var numdigits = Math.floor(Math.log(Math.abs(tick))/Math.LN10) + 1;
                 if (sigdigits > 20) sigdigits = 20;
-                if (sigdigits < 0) sigdigits = 0;
-                if (numdigits < 4 && numdigits >= -2) {
+                if (sigdigits < 1) sigdigits = 1;
+                if (numdigits < -2) {
+                    ticks.push([tick, tick.toExponential(sigdigits)]);
+                } else {
                     var fixeddigits;
                     if (sigdigits < numdigits) { fixeddigits = 0; }
                     else { fixeddigits = sigdigits - numdigits + 1; }
-                    ticks.push([tick, tick.toFixed(fixeddigits)]);
-                } else {
-                    ticks.push([tick, tick.toExponential(sigdigits)]);
+                    var fixed_tickstr = tick.toFixed(fixeddigits);
+                    var exp_tickstr = tick.toExponential(sigdigits);
+                    var tickstr = (exp_tickstr.length < fixed_tickstr.length) ? exp_tickstr : fixed_tickstr; 
+                    ticks.push([tick, tickstr]);
                 }
             }
             tick += tickInterval;

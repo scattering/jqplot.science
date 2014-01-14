@@ -401,8 +401,10 @@
         }
     };
     
-    function set_transform(tform) {
+    function set_transform(tform, axis) {
         // only knows log and lin for now
+        var axis = axis || "zaxis";
+        if (axis != "zaxis") { throw "cannot transform axis other than z in heatmap" }
         this.transform = tform;
         if (tform=='log'){
             this.t = function(datum) {

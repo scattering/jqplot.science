@@ -54,6 +54,8 @@
                      zmin: 0, zmax: 1};
         this.transform = 'lin';
         this.auto_histogram = false;
+        this.draw_method = 'blit';
+        this.get_z = function(x,y) { return 10.0 * Math.pow(Math.sin(x), 2); }
         $.extend(true, this, options);
         this._plot = plot;
         this._colorbar = null; // colorbar will hook in when initialized;
@@ -71,7 +73,10 @@
                       
         // group: Methods 
         //
-        
+        var renderer = this.renderer;
+        if (this.draw_method == 'rect') { renderer.draw = renderer.draw_rect }
+        else if (this.draw_method == 'function') { renderer.draw = renderer.draw_functional_blit }
+        else { renderer.draw = renderer.draw_blit } // default
         this.update_plotdata = update_plotdata;
         this.set_transform = set_transform;
         this.generate_histogram = generate_histogram;
@@ -152,7 +157,8 @@
 			        y0 = Math.round(sxdx.dy + (y-sxdx.sy)*yzoom);
 		            //ctx.fillStyle = "rgba("+r+","+g+","+b+","+(a/255)+")";
 		            var rgba = this.palette_array[plotz];
-		            ctx.fillStyle = "rgba("+rgba[0]+","+rgba[1]+","+rgba[2]+", 255)";
+		            var alpha = (rgba[3] == undefined) ? "255" : rgba[3].toString();
+		            ctx.fillStyle = "rgba("+rgba[0]+","+rgba[1]+","+rgba[2]+","+alpha+")";
 		            ctx.fillRect(x0,y0,xw,yw);
 		        }
 	        }
@@ -190,6 +196,71 @@
                 }
             }
         }
+        ctx.putImageData(myImageData, 0,0);
+    };
+    
+    $.jqplot.heatmapRenderer.prototype.draw_functional_blit = function (ctx, gd, options) {
+        var width = ctx.canvas.width;
+        var height = ctx.canvas.height;
+        var maxColorIndex = 255;
+        var overflowIndex = 256;
+        var zarr = new Array();
+        var tzarr = new Array();
+        this.plotz = new Array();
+        
+        var myImageData = ctx.createImageData(width, height);
+        var sxu = this._xaxis.p2u(1) - this._xaxis.p2u(0); // one-pixel x step in real units
+        var syu = this._yaxis.p2u(1) - this._yaxis.p2u(0); // one-pixel y step...
+        
+        var x0 = this._xaxis.p2u(0 + this.canvas._offsets.left);
+        var y0 = this._yaxis.p2u(0 + this.canvas._offsets.top );
+        var y, yp, x, xp, z, tz;
+        this.dims.zmax = this.dims.zmin = null;
+        for (yp=0; yp<height; yp++) {
+            y = y0 + yp * syu; // y in real units
+            for (xp=0; xp<width; xp++) {
+                x = x0 + xp * sxu;
+                z = this.get_z(x,y);
+                tz = this.t(z);
+                if ((this.dims.zmin == null) || (z < this.dims.zmin)) { this.dims.zmin = z }
+                if ((this.dims.zmax == null) || (z > this.dims.zmax)) { this.dims.zmax = z }
+                
+                zarr.push(z);
+                tzarr.push(tz)
+            }
+        }
+        var tzmax = this.t(this.dims.zmax);
+        var tzmin = this.t(this.dims.zmin);
+        //if (isNaN(tzmin)) tzmin = get_minimum(this.source_data, this.t);
+        this.dims.zmin = this.tinv(tzmin);
+        this.zarr = zarr;
+        this.tzarr = tzarr;
+        
+        // one more time, with the max and min set.
+        var yoffset, offset, plotz;
+        var norm = maxColorIndex / (tzmax - tzmin);
+        for (yp=0; yp<height; yp++) {
+            //var y = y0 + yp * syu); // y in real units
+            yoffset = yp * width;
+            for (xp=0; xp<width; xp++) {
+                offset = 4*(yoffset + xp);
+                tz = tzarr[yoffset + xp];
+                //var plotz = Math.floor((tz - tzmin) / (tzmax - tzmin)) * maxColorIndex);
+                plotz = Math.floor((tz - tzmin) * norm);
+                this.plotz.push(plotz);
+                
+                if (isNaN(plotz) || (z == null)) { plotz = overflowIndex }
+                else if (plotz > maxColorIndex) { plotz = maxColorIndex }
+                else if (plotz < 0) { plotz = 0 }
+                var fillstyle = this.palette_array[plotz];
+                    
+                myImageData.data[offset    ] = fillstyle[0];
+                myImageData.data[offset + 1] = fillstyle[1];
+                myImageData.data[offset + 2] = fillstyle[2];
+                myImageData.data[offset + 3] = (fillstyle[3] == undefined) ? 255 : fillstyle[3];
+            }
+        }
+        ctx.clearRect(0,0, width, height);
         ctx.putImageData(myImageData, 0,0);
     };
     

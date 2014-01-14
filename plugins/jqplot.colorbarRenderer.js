@@ -160,7 +160,7 @@
         // sets limits of plot to specified limits
         // defaults to data limits!
         var limits = limits || this.dims;
-        if ('xmin' in limits) { console.log('xmin: ', limits.xmin, this._xaxis.min); this._xaxis.min = limits.xmin; }
+        if ('xmin' in limits) this._xaxis.min = limits.xmin; 
         if ('xmax' in limits) this._xaxis.max = limits.xmax;
         if ('zmin' in limits) this._yaxis.min = limits.zmin;
         if ('zmax' in limits) this._yaxis.max = limits.zmax;

@@ -215,18 +215,20 @@
         var x0 = this._xaxis.p2u(0 + this.canvas._offsets.left);
         var y0 = this._yaxis.p2u(0 + this.canvas._offsets.top );
         var y, yp, x, xp, z, tz;
-        this.dims.zmax = this.dims.zmin = null;
+        this.dims.zmax = -Infinity;
+        this.dims.zmin = Infinity;
+        var zi = 0;
         for (yp=0; yp<height; yp++) {
             y = y0 + yp * syu; // y in real units
             for (xp=0; xp<width; xp++) {
                 x = x0 + xp * sxu;
                 z = this.get_z(x,y);
                 tz = this.t(z);
-                if ((this.dims.zmin == null) || (z < this.dims.zmin)) { this.dims.zmin = z }
-                if ((this.dims.zmax == null) || (z > this.dims.zmax)) { this.dims.zmax = z }
+                this.dims.zmin = Math.min(this.dims.zmin, z);
+                this.dims.zmax = Math.max(this.dims.zmax, z);
                 
-                zarr.push(z);
-                tzarr.push(tz)
+                zarr[zi] = z;
+                tzarr[zi++] = tz;
             }
         }
         var tzmax = this.t(this.dims.zmax);
@@ -247,7 +249,7 @@
                 tz = tzarr[yoffset + xp];
                 //var plotz = Math.floor((tz - tzmin) / (tzmax - tzmin)) * maxColorIndex);
                 plotz = Math.floor((tz - tzmin) * norm);
-                this.plotz.push(plotz);
+                //this.plotz.push(plotz);
                 
                 if (isNaN(plotz) || (z == null)) { plotz = overflowIndex }
                 else if (plotz > maxColorIndex) { plotz = maxColorIndex }

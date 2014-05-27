@@ -288,6 +288,7 @@
                 // Then adjust axis ranges if necessary
               
                 var eb = d[j][2];
+                if (eb == null) { return }
                 
                 if (this.name == 'xaxis' || this.name == 'x2axis') {
                     if (eb.xerr) {

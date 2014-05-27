@@ -585,9 +585,8 @@ debug = false;
         $.jqplot.Interactor.prototype.init.call(this, 'Quadratic', 'quadratic.png', 0, canvasid);
         var p1 = new $.jqplot.Point(); p1.initialize(this, 200, 150);
         var p2 = new $.jqplot.Point(); p2.initialize(this, 150, 100);
-        var p3 = new $.jqplot.Point(); p3.initialize(this, 100, 150);
-        this.quadratic = new $.jqplot.Quadratic(); this.quadratic.initialize(this, p1, p2, p3, 4);
-        this.grobs.push(this.quadratic, p1, p2, p3);
+        this.quadratic = new $.jqplot.Quadratic(); this.quadratic.initialize(this, p1, p2, 4);
+        this.grobs.push(this.quadratic, p1, p2);
         
         this.redraw();
     };
@@ -1283,14 +1282,13 @@ debug = false;
     $.jqplot.Quadratic.prototype = new $.jqplot.FunctionConnector();
     $.jqplot.Quadratic.prototype.constructor = $.jqplot.Quadratic;    
     $.extend($.jqplot.Quadratic.prototype, {        
-        initialize: function(parent, p1, p2, p3, width) {
+        initialize: function(parent, p1, p2, width) {
             $.jqplot.FunctionConnector.prototype.initialize.call(this, parent, width);
             this.name = 'quadratic';
             this.f = this.quadratic;
-            this.points = { p1: p1, p2: p2, p3: p3 };
+            this.points = { p1: p1, p2: p2 };
             this.p1 = p1;
             this.p2 = p2;
-            this.p3 = p3;
             this.c = p1;
         },
         render: function(ctx) {
@@ -1300,13 +1298,10 @@ debug = false;
         },
         
         quadratic: function(x) {
-            var X1 = this.p1.pos.x, X2 = this.p2.pos.x, X3 = this.p3.pos.x,
-                Y1 = this.c.pos.y - this.p1.pos.y, Y2 = this.c.pos.y - this.p2.pos.y, Y3 = this.c.pos.y - this.p3.pos.y;
-            var a = ((Y2-Y1)*(X1-X3) + (Y3-Y1)*(X2-X1))/((X1-X3)*(X2*X2-X1*X1) + (X2-X1)*(X3*X3-X1*X1)),
-                b = ((Y2-Y1) - a*(X2*X2-X1*X1)) / (X2-X1),
-                c = Y1 - a*X1*X1 - b*X1;
-                
-            return a*x*x+b*x+c;
+            var center = this.p1.pos.x, offset = this.p1.pos.y,
+                dx = (this.p2.pos.x-center), dy=(this.p2.pos.y-offset),
+                a = (x-center)/dx;
+            return -dy*a*a;
         }
     });
     

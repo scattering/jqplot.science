@@ -519,8 +519,10 @@
                 var offset = 4*((r*width) + c);
                 //var z = data[c][height-r-1];
                 var z = data[r][c];
-                xsum += z;
-                ysum[r] += z;
+                if (Number.isFinite(z)) {
+                    xsum += z;
+                    ysum[r] += z;
+                }
                 cumsum_x_col.push(xsum);
                 cumsum_y_col.push(ysum[r]);
                 

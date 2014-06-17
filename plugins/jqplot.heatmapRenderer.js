@@ -519,7 +519,7 @@
                 var offset = 4*((r*width) + c);
                 //var z = data[c][height-r-1];
                 var z = data[r][c];
-                if (Number.isFinite(z)) {
+                if (isFinite(z)) {
                     xsum += z;
                     ysum[r] += z;
                 }

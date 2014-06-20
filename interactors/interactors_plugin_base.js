@@ -209,6 +209,8 @@
         onMouseDown: function(e) {
             var master = e.data.master;
             var ev = e.originalEvent;
+            ev.preventDefault();
+            ev.stopPropagation();
             master.mousedown = true;
             var pos = master.getMouse(ev);
             master.prevpos = pos;
@@ -267,8 +269,8 @@
             
             var pos = master.getMouse(ev);
             var sel_grob = null;
-	        var sel_grob_num = null;
-	        //console.log(pos);
+            var sel_grob_num = null;
+            //console.log(pos);
             for (var i = 0; i < master.grobs.length; i ++) {
                 var g = master.grobs[i];
                 var inside = g.isInside(pos);
@@ -276,7 +278,7 @@
                 if (inside) {
                     //this.prevpos = pos;
                     sel_grob_num = i;
-		    sel_grob = g;
+                    sel_grob = g;
                 }
             }
             //console.log("double-clicked:", sel_grob.parent);
@@ -284,7 +286,7 @@
                 // then we're double-clicking outside all the interactors
                 master.zoomMax();
             } else {
-	    	sel_grob.parent.onDoubleClick(sel_grob, pos);
+                sel_grob.parent.onDoubleClick(sel_grob, pos);
                 //this.redraw();
                 //this.redraw();
             }
@@ -367,9 +369,9 @@
         },
         
         zoomMax: function() {
-	    var xdb = this.plot.series[0]._xaxis._dataBounds;
-	    var ydb = this.plot.series[0]._yaxis._dataBounds;
-	    if ((xdb.min != null) && (xdb.max != null) && (ydb.min != null) && (ydb.max != null)) {
+        var xdb = this.plot.series[0]._xaxis._dataBounds;
+        var ydb = this.plot.series[0]._yaxis._dataBounds;
+        if ((xdb.min != null) && (xdb.max != null) && (ydb.min != null) && (ydb.max != null)) {
                 // zoom to the limits of the data, with good tick locations
                 var xmin = xdb.min;
                 var xmax = xdb.max;
@@ -670,16 +672,16 @@
         },
         
         render: function(ctx) {
-	        ctx.fillStyle = this.color;
-	        //ctx.strokeStyle = 'transparent';
+            ctx.fillStyle = this.color;
+            //ctx.strokeStyle = 'transparent';
             ctx.beginPath();
-	        //var coords = this.getCoords();
-	        this.pos = this.putCoords();
-	        ctx.fillText('(' + this.coords.x.toFixed(3) + ', ' + this.coords.y.toFixed(3) + ')', this.pos.x, this.pos.y - 5);
-	        ctx.arc(this.pos.x, this.pos.y, this.r, 0, Math.PI * 2, true);
-	        //ctx.closePath();
-	        //ctx.stroke();
-	        ctx.fill();
+            //var coords = this.getCoords();
+            this.pos = this.putCoords();
+            ctx.fillText('(' + this.coords.x.toFixed(3) + ', ' + this.coords.y.toFixed(3) + ')', this.pos.x, this.pos.y - 5);
+            ctx.arc(this.pos.x, this.pos.y, this.r, 0, Math.PI * 2, true);
+            //ctx.closePath();
+            //ctx.stroke();
+            ctx.fill();
         }
     });
     
@@ -694,21 +696,21 @@
         },
         
         render: function(ctx) {
-	        ctx.fillStyle = this.color;
-	        //ctx.strokeStyle = 'transparent';
+            ctx.fillStyle = this.color;
+            //ctx.strokeStyle = 'transparent';
             ctx.beginPath();
-	        //ctx.moveTo(this.x, this.y);
-	        var coords = this.coords;
-	        this.pos = this.putCoords();
-	        ctx.fillText('(' + coords.x.toFixed(3) + ', ' + coords.y.toFixed(3) + ')', this.pos.x, this.pos.y - 5);
+            //ctx.moveTo(this.x, this.y);
+            var coords = this.coords;
+            this.pos = this.putCoords();
+            ctx.fillText('(' + coords.x.toFixed(3) + ', ' + coords.y.toFixed(3) + ')', this.pos.x, this.pos.y - 5);
             //ctx.fillText('(' + this.pos.x.toFixed(0) + ', ' + this.pos.y.toFixed(0) + ')', this.pos.x, this.pos.y - 5);
-	        ctx.moveTo(this.pos.x + this.r, this.pos.y);
-	        ctx.lineTo(this.pos.x, this.pos.y + this.r);
-	        ctx.lineTo(this.pos.x - this.r, this.pos.y);
-	        ctx.lineTo(this.pos.x, this.pos.y - this.r);
-	        ctx.closePath();
-	        //ctx.stroke();
-	        ctx.fill();
+            ctx.moveTo(this.pos.x + this.r, this.pos.y);
+            ctx.lineTo(this.pos.x, this.pos.y + this.r);
+            ctx.lineTo(this.pos.x - this.r, this.pos.y);
+            ctx.lineTo(this.pos.x, this.pos.y - this.r);
+            ctx.closePath();
+            //ctx.stroke();
+            ctx.fill();
         },
 
         onDrag: function(e, pos) {

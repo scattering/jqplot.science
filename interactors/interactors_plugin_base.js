@@ -131,7 +131,7 @@
             this.translatable = true;
 
             this.grobs = [];
-            this.mousedown = false;
+            this.mousedown = {};
             this.curgrob = null;
             
             this.color1 = '#6699ff';
@@ -211,7 +211,8 @@
             var ev = e.originalEvent;
             ev.preventDefault();
             ev.stopPropagation();
-            master.mousedown = true;
+            var which = ev.which;
+            master.mousedown[which] = true;
             var pos = master.getMouse(ev);
             master.prevpos = pos;
             for (var i = 0; i < master.grobs.length; i ++) {
@@ -230,7 +231,8 @@
         onMouseUp:   function(e) {
             var master = e.data.master;
             var ev = e.originalEvent;
-            master.mousedown = false;
+            var which = ev.which;
+            master.mousedown[which] = false;
             var pos = master.getMouse(ev);
             master.prevpos = null;
             if (master.curgrob != null) {
@@ -240,24 +242,6 @@
             master.curgrob = null;
             //console.log('up  ', /*this.grobs,*/ pos.x, pos.y, 'mousedown=',this.mousedown);
             master.redraw();
-        },
-        
-        handleMouseDown: function(ev, gridpos, datapos, neighbor, plot) {
-            console.log(this);
-            this.mousedown = true;
-            var pos = gridpos;
-            var coords = datapos;
-            this.prevpos = pos;
-            for (var i = 0; i < this.grobs.length; i ++) {
-                var g = this.grobs[i];
-                var inside = g.isInside(pos);
-                
-                if (inside) {
-                    //this.prevpos = pos;
-                    this.curgrob = i;
-                    g.prevpos = pos;
-                }
-            }
         },
         
         onDoubleClick: function(e) {
@@ -333,7 +317,7 @@
                 var master = e.data.master;               
                 var pos = master.getMouse(e.originalEvent);
                 var i = 0, inside = false;
-                if (master.mousedown) {                    
+                if (master.mousedown[1] == true) {                    
                     if (master.curgrob != null) {
                         var cg = master.grobs[master.curgrob];
                         cg.onDrag(e, pos);
@@ -539,9 +523,6 @@
             this.plugins._interactor.init(master_opts);
             this.plugins._interactor.plot = this;
             this.plugins._interactor.name = "master";
-            //var master = this.plugins._interactor;
-            //this.eventListenerHooks.addOnce('jqplotMouseDown', bind(master, master.handleMouseDown));
-            
             
             for (var i in options.interactors) {
                 var iopts = options.interactors[i];
@@ -560,36 +541,6 @@
             }
         }    
     };
-    /*
-    $.jqplot.InteractorPlugin.pluginit = function (target, data, opts) {
-        // add an interactor attribute to the plot
-        var options = opts || {};
-        if (options.interactors) {
-            if (!this.plugins.interactors) this.plugins.interactors = {};
-            this.plugins._interactor = new $.jqplot.MasterInteractorPlugin();
-            this.plugins._interactor.init();
-            this.plugins._interactor.plot = this;
-            this.plugins._interactor.name = "master";
-            //var master = this.plugins._interactor;
-            //this.eventListenerHooks.addOnce('jqplotMouseDown', bind(master, master.handleMouseDown));
-            
-            
-            for (var i in options.interactors) {
-                var iopts = options.interactors[i];
-                var itype = iopts.type;
-                var name = iopts.name || String(this.plugins.interactors.length);
-                var newi = new $.jqplot.InteractorPluginSubtypes[itype]();
-                this.plugins.interactors[name] = newi;
-                newi.init(iopts);
-                newi.plot = this;
-                //for (var j in newi.grobs) {
-                //    this.plugins._interactor.grobs.push(newi.grobs[j]);
-                //}
-                this.plugins._interactor.interactors.push(newi);
-            }
-        }    
-    };
-    */
     
     $.jqplot.preInitHooks.push($.jqplot.InteractorPlugin.pluginit);
     $.jqplot.postDrawHooks.push($.jqplot.InteractorPlugin.postDraw);
@@ -882,22 +833,4 @@
         return ticks; 
     };
     
-    function handleMouseDown(ev, gridpos, datapos, neighbor, plot) {
-//            if (neighbor) {
-//                var si = neighbor.seriesIndex;
-//                var pi = neighbor.pointIndex;
-//                var ins = [si, pi, neighbor.data, plot.series[si].gridData[pi][2]];
-//                if (plot.series[ins[0]].highlightMouseDown && !(ins[0] == plot.plugins.bubbleRenderer.highlightedSeriesIndex && ins[1] == plot.series[ins[0]]._highlightedPoint)) {
-//                    var evt = jQuery.Event('jqplotDataHighlight');
-//                    evt.pageX = ev.pageX;
-//                    evt.pageY = ev.pageY;
-//                    plot.target.trigger(evt, ins);
-//                    highlight (plot, ins[0], ins[1]);
-//                }
-//            }
-//            else if (neighbor == null) {
-//                unhighlight (plot);
-//            }
-            console.log(ev, gridpos, datapos, plot);
-        };
 })(jQuery);

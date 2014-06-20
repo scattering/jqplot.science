@@ -450,8 +450,8 @@
             $(ec).on('DOMMouseScroll', {master:master}, master.onMouseWheel);
             
             $(ec).on('dblclick', {master:master}, master.onDoubleClick);
-            $(ec).on('selectstart', function() { return false; }); // turn these off.
-            $(ec).on('contextmenu', function() { return false; });
+            $(ec).on('selectstart', {}, function() { return false; }); // turn these off.
+            $(ec).on('contextmenu', {}, function() { return false; });
             
             /*
             ec.ontouchstart = touchToMouse;

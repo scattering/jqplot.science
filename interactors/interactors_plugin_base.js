@@ -307,7 +307,7 @@
                 if (e.wheelDelta) { dzoom = e.wheelDelta; }
                 else if (e.detail) { dzoom = e.detail * -40; }
                 else { dzoom = 0 }
-                master.zoomPlot(dzoom, pos);
+                master.zoomPlot(dzoom, dzoom, pos);
             }
         },
         
@@ -369,25 +369,26 @@
             }
         },
         
-        zoomPlot: function(dzoom, centerpos) {
+        zoomPlot: function(dzoomx, dzoomy, centerpos) {
             var center = this.getCoords(centerpos);
             // make a zoom of 120 = 10% change in axis limits
-            var conv = dzoom * 0.2/120;
+            var convx = dzoomx * 0.2/120;
+            var convy = dzoomy * 0.2/120;
             
             var xtransf = this.plot.series[0]._xaxis.transform || 'lin';
             var ytransf = this.plot.series[0]._yaxis.transform || 'lin';
             var xmin = this.plot.series[0]._xaxis.min;
             var xmax = this.plot.series[0]._xaxis.max;
             if (!this.fix_x) {
-                xmin += (center.x - xmin) * conv;
-                xmax += (center.x - xmax) * conv;
+                xmin += (center.x - xmin) * convx;
+                xmax += (center.x - xmax) * convx;
             }
             if (!this.fix_y) {
                 var ymin = this.plot.series[0]._yaxis.min;
                 var ymax = this.plot.series[0]._yaxis.max;
             }
-            ymin += (center.y - ymin) * conv;
-            ymax += (center.y - ymax) * conv;
+            ymin += (center.y - ymin) * convy;
+            ymax += (center.y - ymax) * convy;
             this.plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
             this.plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
             this.plot.redraw();

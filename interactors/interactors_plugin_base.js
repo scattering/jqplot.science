@@ -140,6 +140,8 @@
             
             this.rc = 1;//Math.random();
             this.forceload = false; // make the master initialize, even if no other interactors
+            this.scrollZoom = true;
+            this.dragPan = true;
             $.extend(true, this, options);
             this.notMaster = false;
             this.interactors = []; // number of interactors

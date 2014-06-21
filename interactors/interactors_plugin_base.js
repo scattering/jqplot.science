@@ -141,6 +141,7 @@
             this.rc = 1;//Math.random();
             this.forceload = false; // make the master initialize, even if no other interactors
             this.scrollZoom = true;
+            this.rightZoom = true;
             this.dragPan = true;
             $.extend(true, this, options);
             this.notMaster = false;
@@ -309,7 +310,10 @@
                 if (e.wheelDelta) { dzoom = e.wheelDelta; }
                 else if (e.detail) { dzoom = e.detail * -40; }
                 else { dzoom = 0 }
-                master.zoomPlot(dzoom, dzoom, pos);
+                // make a zoom of 120 = 10% change in axis limits
+                var conv = dzoom * 0.2/120;
+                // zooom x and y the same amount:
+                master.zoomPlot(conv, conv, pos);
             }
         },
         
@@ -327,6 +331,8 @@
                     } else {
                         master.onEmptyDrag(pos);
                     }
+                } else if (master.mousedown[3] == true) {
+                    master.onEmptyDrag(pos);
                 } else {
                     while (i < master.grobs.length) {
                         var g = master.grobs[i];
@@ -351,7 +357,25 @@
         },
         
         onEmptyDrag: function(pos) {
-            if (this.dragPan == true) this.panPlot(pos);
+            if (this.dragPan == true && this.mousedown[1] == true) this.panPlot(pos);
+            else if (this.rightZoom == true && this.mousedown[3] == true) this.doRightZoom(pos);
+        },
+        
+        panPlot: function(pos) {
+            var newcoords = this.getCoords(pos);
+            var prevcoords = this.getCoords(this.prevpos);
+            this.prevpos = pos;
+            var xtransf = this.plot.series[0]._xaxis.transform || 'lin';
+            var ytransf = this.plot.series[0]._yaxis.transform || 'lin';
+            var dx = newcoords.x - prevcoords.x;
+            var dy = newcoords.y - prevcoords.y;
+            var xmin = this.plot.series[0]._xaxis.min - dx;
+            var xmax = this.plot.series[0]._xaxis.max - dx;
+            var ymin = this.plot.series[0]._yaxis.min - dy;
+            var ymax = this.plot.series[0]._yaxis.max - dy;
+            this.plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
+            this.plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
+            this.plot.redraw();
         },
         
         zoomMax: function() {
@@ -373,44 +397,36 @@
         
         zoomPlot: function(dzoomx, dzoomy, centerpos) {
             var center = this.getCoords(centerpos);
-            // make a zoom of 120 = 10% change in axis limits
-            var convx = dzoomx * 0.2/120;
-            var convy = dzoomy * 0.2/120;
             
             var xtransf = this.plot.series[0]._xaxis.transform || 'lin';
             var ytransf = this.plot.series[0]._yaxis.transform || 'lin';
             var xmin = this.plot.series[0]._xaxis.min;
             var xmax = this.plot.series[0]._xaxis.max;
             if (!this.fix_x) {
-                xmin += (center.x - xmin) * convx;
-                xmax += (center.x - xmax) * convx;
+                xmin += (center.x - xmin) * dzoomx;
+                xmax += (center.x - xmax) * dzoomx;
             }
             if (!this.fix_y) {
                 var ymin = this.plot.series[0]._yaxis.min;
                 var ymax = this.plot.series[0]._yaxis.max;
             }
-            ymin += (center.y - ymin) * convy;
-            ymax += (center.y - ymax) * convy;
+            ymin += (center.y - ymin) * dzoomy;
+            ymax += (center.y - ymax) * dzoomy;
             this.plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
             this.plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
             this.plot.redraw();
         },
         
-        panPlot: function(pos) {
+        doRightZoom: function(pos) {
             var newcoords = this.getCoords(pos);
             var prevcoords = this.getCoords(this.prevpos);
             this.prevpos = pos;
-            var xtransf = this.plot.series[0]._xaxis.transform || 'lin';
-            var ytransf = this.plot.series[0]._yaxis.transform || 'lin';
             var dx = newcoords.x - prevcoords.x;
             var dy = newcoords.y - prevcoords.y;
-            var xmin = this.plot.series[0]._xaxis.min - dx;
-            var xmax = this.plot.series[0]._xaxis.max - dx;
-            var ymin = this.plot.series[0]._yaxis.min - dy;
-            var ymax = this.plot.series[0]._yaxis.max - dy;
-            this.plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
-            this.plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
-            this.plot.redraw();
+            var xrange = Math.abs(this.plot.series[0]._xaxis.max - this.plot.series[0]._xaxis.min);
+            var yrange = Math.abs(this.plot.series[0]._yaxis.max - this.plot.series[0]._yaxis.min);
+            if (xrange == 0 || yrange == 0) return;
+            this.zoomPlot((dx / xrange), (dy / yrange), pos);
         }
     });
     

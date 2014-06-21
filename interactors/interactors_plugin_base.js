@@ -429,7 +429,7 @@
             var ycenter = 0.5 * (this.plot.series[0]._yaxis.max + this.plot.series[0]._yaxis.min);
             var centerpos = this.putCoords({'x': xcenter, 'y': ycenter});
             if (xrange == 0 || yrange == 0) return;
-            this.zoomPlot((dx / xrange), (dy / yrange), centerpos);
+            this.zoomPlot((2.0 * dx / xrange), (2.0 * dy / yrange), centerpos);
         }
     });
     

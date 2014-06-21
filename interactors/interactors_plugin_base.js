@@ -425,8 +425,11 @@
             var dy = newcoords.y - prevcoords.y;
             var xrange = Math.abs(this.plot.series[0]._xaxis.max - this.plot.series[0]._xaxis.min);
             var yrange = Math.abs(this.plot.series[0]._yaxis.max - this.plot.series[0]._yaxis.min);
+            var xcenter = 0.5 * (this.plot.series[0]._xaxis.max + this.plot.series[0]._xaxis.min);
+            var ycenter = 0.5 * (this.plot.series[0]._yaxis.max - this.plot.series[0]._yaxis.min);
+            var centerpos = this.putCoords({'x': xcenter, 'y': ycenter});
             if (xrange == 0 || yrange == 0) return;
-            this.zoomPlot((dx / xrange), (dy / yrange), pos);
+            this.zoomPlot((dx / xrange), (dy / yrange), centerpos);
         }
     });
     

@@ -492,11 +492,11 @@
         if (isNaN(tzmin)) tzmin = get_minimum(this.source_data, this.t);
         this.dims.zmin = this.tinv(tzmin);
         var data = this.source_data; 
-        var plotdata = [];
+        var plotdata = [], rowdata;
         
         // plotdata is stored in row-major order ("C"), where row is "y"
         for (var r = 0; r < height; r++) {
-            plotdata[r] = [];
+            rowdata = [];
             for (var c = 0; c < width; c++) {
                 var z = data[r][c];
                 var plotz = Math.floor(((this.t(z) - tzmin) / (tzmax - tzmin)) * maxColorIndex);
@@ -504,8 +504,9 @@
                 if (isNaN(plotz) || (z == null)) { plotz = overflowIndex }
                 else if (plotz > maxColorIndex) { plotz = maxColorIndex }
                 else if (plotz < 0) { plotz = 0 }
-                plotdata[r][c]=plotz;
+                rowdata[c]=plotz;
             }
+            plotdata[r] = rowdata.slice();
         }
         this.plotdata = plotdata;
     };

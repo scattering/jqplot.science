@@ -180,16 +180,15 @@
         
         var dx0p = (this._xaxis.p2u(0 + this.canvas._offsets.left) - this.dims.xmin)/ this.dims.dx;
         var dy0p = (this._yaxis.p2u(0 + this.canvas._offsets.top) - this.dims.ymin) / this.dims.dy;
-        var offset=0;
-        var y, x, dyp, dxp, fillstyle;
+	var y, x, dyp, dxp, fillstyle, suboffset, offset;
         for (y=0; y<height; y++) {
             dyp = Math.floor(dy0p + y * syp);
+	    suboffset = y * width * 4;
             if (dyp >= 0 && dyp < this.dims.ydim) {
                 for (x=0; x<width; x++) {
                     dxp = Math.floor(dx0p + x * sxp);
                     if (dxp >=0 && dxp < this.dims.xdim) {
-                        //var offset = (y*width + x)*4;
-                        //console.log(offset, this.plotdata);
+                        offset = suboffset + x*4;
                         fillstyle = this.palette_array[this.plotdata[dyp][dxp]];
                         myImageData.data[offset++] = fillstyle[0];
                         myImageData.data[offset++] = fillstyle[1];
@@ -495,18 +494,19 @@
         var plotdata = [], rowdata;
         
         // plotdata is stored in row-major order ("C"), where row is "y"
-        for (var r = 0; r < height; r++) {
-            rowdata = [];
-            for (var c = 0; c < width; c++) {
-                var z = data[r][c];
-                var plotz = Math.floor(((this.t(z) - tzmin) / (tzmax - tzmin)) * maxColorIndex);
+	var z, r, c, plotz;
+        for (r = 0; r < height; r++) {
+            plotdata[r] = [];
+            for (c = 0; c < width; c++) {
+                z = data[r][c];
+                plotz = Math.floor(((this.t(z) - tzmin) / (tzmax - tzmin)) * maxColorIndex);
                 
                 if (isNaN(plotz) || (z == null)) { plotz = overflowIndex }
                 else if (plotz > maxColorIndex) { plotz = maxColorIndex }
                 else if (plotz < 0) { plotz = 0 }
-                rowdata[c]=plotz;
+                plotdata[r][c]=plotz;
             }
-            plotdata[r] = rowdata.slice();
+            //plotdata[r] = rowdata.slice();
         }
         this.plotdata = plotdata;
     };

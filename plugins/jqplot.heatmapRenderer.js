@@ -76,6 +76,7 @@
         var renderer = this.renderer;
         if (this.draw_method == 'rect') { renderer.draw = renderer.draw_rect }
         else if (this.draw_method == 'function') { renderer.draw = renderer.draw_functional_blit }
+        else if (this.draw_method == 'object') { renderer.draw = renderer.draw_object_blit }
         else { renderer.draw = renderer.draw_blit } // default
         this.update_plotdata = update_plotdata;
         this.set_transform = set_transform;
@@ -179,19 +180,21 @@
         
         var dx0p = (this._xaxis.p2u(0 + this.canvas._offsets.left) - this.dims.xmin)/ this.dims.dx;
         var dy0p = (this._yaxis.p2u(0 + this.canvas._offsets.top) - this.dims.ymin) / this.dims.dy;
-        for (var y=0; y<height; y++) {
-            var dyp = Math.floor(dy0p + y * syp);
+        var offset=0;
+        var y, x, dyp, dxp, fillstyle;
+        for (y=0; y<height; y++) {
+            dyp = Math.floor(dy0p + y * syp);
             if (dyp >= 0 && dyp < this.dims.ydim) {
-                for (var x=0; x<width; x++) {
-                    var dxp = Math.floor(dx0p + x * sxp);
+                for (x=0; x<width; x++) {
+                    dxp = Math.floor(dx0p + x * sxp);
                     if (dxp >=0 && dxp < this.dims.xdim) {
-                        var offset = (y*width + x)*4;
+                        //var offset = (y*width + x)*4;
                         //console.log(offset, this.plotdata);
-                        var fillstyle = this.palette_array[this.plotdata[dyp][dxp]];
-                        myImageData.data[offset    ] = fillstyle[0];
-                        myImageData.data[offset + 1] = fillstyle[1];
-                        myImageData.data[offset + 2] = fillstyle[2];
-                        myImageData.data[offset + 3] = (fillstyle[3] == undefined) ? 255 : fillstyle[3];
+                        fillstyle = this.palette_array[this.plotdata[dyp][dxp]];
+                        myImageData.data[offset++] = fillstyle[0];
+                        myImageData.data[offset++] = fillstyle[1];
+                        myImageData.data[offset++] = fillstyle[2];
+                        myImageData.data[offset++] = fillstyle[3];
                     }
                 }
             }
@@ -215,18 +218,21 @@
         var x0 = this._xaxis.p2u(0 + this.canvas._offsets.left);
         var y0 = this._yaxis.p2u(0 + this.canvas._offsets.top );
         var y, yp, x, xp, z, tz;
-        this.dims.zmax = this.dims.zmin = null;
+        this.dims.zmax = -Infinity;
+        this.dims.zmin = Infinity;
+        var start = new Date();
+        var offset = 0;
         for (yp=0; yp<height; yp++) {
             y = y0 + yp * syu; // y in real units
             for (xp=0; xp<width; xp++) {
                 x = x0 + xp * sxu;
                 z = this.get_z(x,y);
                 tz = this.t(z);
-                if ((this.dims.zmin == null) || (z < this.dims.zmin)) { this.dims.zmin = z }
-                if ((this.dims.zmax == null) || (z > this.dims.zmax)) { this.dims.zmax = z }
+                this.dims.zmin = Math.min(this.dims.zmin, z);
+                this.dims.zmax = Math.max(this.dims.zmax, z);
                 
-                zarr.push(z);
-                tzarr.push(tz)
+                zarr[offset++] = z;
+                tzarr[offset] = tz;
             }
         }
         var tzmax = this.t(this.dims.zmax);
@@ -235,38 +241,46 @@
         this.dims.zmin = this.tinv(tzmin);
         this.zarr = zarr;
         this.tzarr = tzarr;
-        
+        var middle = new Date();
         // one more time, with the max and min set.
-        var yoffset, offset, plotz;
+        var yoffset, plotz;
+        var offset = 0; 
         var norm = maxColorIndex / (tzmax - tzmin);
         for (yp=0; yp<height; yp++) {
             //var y = y0 + yp * syu); // y in real units
             yoffset = yp * width;
             for (xp=0; xp<width; xp++) {
-                offset = 4*(yoffset + xp);
+                //offset = 4*(yoffset + xp);
                 tz = tzarr[yoffset + xp];
                 //var plotz = Math.floor((tz - tzmin) / (tzmax - tzmin)) * maxColorIndex);
                 plotz = Math.floor((tz - tzmin) * norm);
-                this.plotz.push(plotz);
+                //this.plotz[yoffset + xp] = plotz;
                 
                 if (isNaN(plotz) || (z == null)) { plotz = overflowIndex }
+                //else { plotz = Math.max(0, Math.min(plotz, maxColorIndex)); }
                 else if (plotz > maxColorIndex) { plotz = maxColorIndex }
                 else if (plotz < 0) { plotz = 0 }
                 var fillstyle = this.palette_array[plotz];
                     
-                myImageData.data[offset    ] = fillstyle[0];
-                myImageData.data[offset + 1] = fillstyle[1];
-                myImageData.data[offset + 2] = fillstyle[2];
-                myImageData.data[offset + 3] = (fillstyle[3] == undefined) ? 255 : fillstyle[3];
+                myImageData.data[offset++] = fillstyle[0];
+                myImageData.data[offset++] = fillstyle[1];
+                myImageData.data[offset++] = fillstyle[2];
+                myImageData.data[offset++] = fillstyle[3];
             }
         }
+        var end1 = new Date();
         ctx.clearRect(0,0, width, height);
         ctx.putImageData(myImageData, 0,0);
+        var end2 = new Date();
+        console.log(middle.getTime() - start.getTime(), end1.getTime() - middle.getTime(), end2.getTime() - end1.getTime());
     };
     
     $.jqplot.heatmapRenderer.prototype.draw = $.jqplot.heatmapRenderer.prototype.draw_blit; //default
     
-    var jet_array = [[0,0,127],[0,0,132],[0,0,136],[0,0,141],[0,0,145],[0,0,150],[0,0,154],[0,0,159],[0,0,163],
+    var jet_array = [[0, 0, 127, 255], [0, 0, 132, 255], [0, 0, 136, 255], [0, 0, 141, 255], [0, 0, 145, 255], [0, 0, 150, 255], [0, 0, 154, 255], [0, 0, 159, 255], [0, 0, 163, 255], [0, 0, 168, 255], [0, 0, 172, 255], [0, 0, 177, 255], [0, 0, 181, 255], [0, 0, 186, 255], [0, 0, 190, 255], [0, 0, 195, 255], [0, 0, 199, 255], [0, 0, 204, 255], [0, 0, 208, 255], [0, 0, 213, 255], [0, 0, 218, 255], [0, 0, 222, 255], [0, 0, 227, 255], [0, 0, 231, 255], [0, 0, 236, 255], [0, 0, 240, 255], [0, 0, 245, 255], [0, 0, 249, 255], [0, 0, 254, 255], [0, 0, 255, 255], [0, 0, 255, 255], [0, 0, 255, 255], [0, 0, 255, 255], [0, 3, 255, 255], [0, 7, 255, 255], [0, 11, 255, 255], [0, 15, 255, 255], [0, 19, 255, 255], [0, 23, 255, 255], [0, 27, 255, 255], [0, 31, 255, 255], [0, 35, 255, 255], [0, 39, 255, 255], [0, 43, 255, 255], [0, 47, 255, 255], [0, 51, 255, 255], [0, 55, 255, 255], [0, 59, 255, 255], [0, 63, 255, 255], [0, 67, 255, 255], [0, 71, 255, 255], [0, 75, 255, 255], [0, 79, 255, 255], [0, 83, 255, 255], [0, 87, 255, 255], [0, 91, 255, 255], [0, 95, 255, 255], [0, 99, 255, 255], [0, 103, 255, 255], [0, 107, 255, 255], [0, 111, 255, 255], [0, 115, 255, 255], [0, 119, 255, 255], [0, 123, 255, 255], [0, 127, 255, 255], [0, 131, 255, 255], [0, 135, 255, 255], [0, 139, 255, 255], [0, 143, 255, 255], [0, 147, 255, 255], [0, 151, 255, 255], [0, 155, 255, 255], [0, 159, 255, 255], [0, 163, 255, 255], [0, 167, 255, 255], [0, 171, 255, 255], [0, 175, 255, 255], [0, 179, 255, 255], [0, 183, 255, 255], [0, 187, 255, 255], [0, 191, 255, 255], [0, 195, 255, 255], [0, 199, 255, 255], [0, 203, 255, 255], [0, 207, 255, 255], [0, 211, 255, 255], [0, 215, 255, 255], [0, 219, 255, 255], [0, 223, 251, 255], [0, 227, 248, 255], [1, 231, 245, 255], [4, 235, 242, 255], [7, 239, 239, 255], [10, 243, 235, 255], [14, 247, 232, 255], [17, 251, 229, 255], [20, 255, 226, 255], [23, 255, 222, 255], [26, 255, 219, 255], [30, 255, 216, 255], [33, 255, 213, 255], [36, 255, 210, 255], [39, 255, 206, 255], [43, 255, 203, 255], [46, 255, 200, 255], [49, 255, 197, 255], [52, 255, 194, 255], [55, 255, 190, 255], [59, 255, 187, 255], [62, 255, 184, 255], [65, 255, 181, 255], [68, 255, 178, 255], [71, 255, 174, 255], [75, 255, 171, 255], [78, 255, 168, 255], [81, 255, 165, 255], [84, 255, 161, 255], [88, 255, 158, 255], [91, 255, 155, 255], [94, 255, 152, 255], [97, 255, 149, 255], [100, 255, 145, 255], [104, 255, 142, 255], [107, 255, 139, 255], [110, 255, 136, 255], [113, 255, 133, 255], [116, 255, 129, 255], [120, 255, 126, 255], [123, 255, 123, 255], [126, 255, 120, 255], [129, 255, 116, 255], [133, 255, 113, 255], [136, 255, 110, 255], [139, 255, 107, 255], [142, 255, 104, 255], [145, 255, 100, 255], [149, 255, 97, 255], [152, 255, 94, 255], [155, 255, 91, 255], [158, 255, 88, 255], [161, 255, 84, 255], [165, 255, 81, 255], [168, 255, 78, 255], [171, 255, 75, 255], [174, 255, 71, 255], [178, 255, 68, 255], [181, 255, 65, 255], [184, 255, 62, 255], [187, 255, 59, 255], [190, 255, 55, 255], [194, 255, 52, 255], [197, 255, 49, 255], [200, 255, 46, 255], [203, 255, 43, 255], [206, 255, 39, 255], [210, 255, 36, 255], [213, 255, 33, 255], [216, 255, 30, 255], [219, 255, 26, 255], [222, 255, 23, 255], [226, 255, 20, 255], [229, 255, 17, 255], [232, 255, 14, 255], [235, 255, 10, 255], [239, 254, 7, 255], [242, 250, 4, 255], [245, 247, 1, 255], [248, 243, 0, 255], [251, 239, 0, 255], [255, 235, 0, 255], [255, 232, 0, 255], [255, 228, 0, 255], [255, 224, 0, 255], [255, 221, 0, 255], [255, 217, 0, 255], [255, 213, 0, 255], [255, 210, 0, 255], [255, 206, 0, 255], [255, 202, 0, 255], [255, 199, 0, 255], [255, 195, 0, 255], [255, 191, 0, 255], [255, 188, 0, 255], [255, 184, 0, 255], [255, 180, 0, 255], [255, 176, 0, 255], [255, 173, 0, 255], [255, 169, 0, 255], [255, 165, 0, 255], [255, 162, 0, 255], [255, 158, 0, 255], [255, 154, 0, 255], [255, 151, 0, 255], [255, 147, 0, 255], [255, 143, 0, 255], [255, 140, 0, 255], [255, 136, 0, 255], [255, 132, 0, 255], [255, 128, 0, 255], [255, 125, 0, 255], [255, 121, 0, 255], [255, 117, 0, 255], [255, 114, 0, 255], [255, 110, 0, 255], [255, 106, 0, 255], [255, 103, 0, 255], [255, 99, 0, 255], [255, 95, 0, 255], [255, 92, 0, 255], [255, 88, 0, 255], [255, 84, 0, 255], [255, 81, 0, 255], [255, 77, 0, 255], [255, 73, 0, 255], [255, 69, 0, 255], [255, 66, 0, 255], [255, 62, 0, 255], [255, 58, 0, 255], [255, 55, 0, 255], [255, 51, 0, 255], [255, 47, 0, 255], [255, 44, 0, 255], [255, 40, 0, 255], [255, 36, 0, 255], [255, 33, 0, 255], [255, 29, 0, 255], [255, 25, 0, 255], [255, 21, 0, 255], [254, 18, 0, 255], [249, 14, 0, 255], [245, 10, 0, 255], [240, 7, 0, 255], [236, 3, 0, 255], [231, 0, 0, 255], [227, 0, 0, 255], [222, 0, 0, 255], [218, 0, 0, 255], [213, 0, 0, 255], [208, 0, 0, 255], [204, 0, 0, 255], [199, 0, 0, 255], [195, 0, 0, 255], [190, 0, 0, 255], [186, 0, 0, 255], [181, 0, 0, 255], [177, 0, 0, 255], [172, 0, 0, 255], [168, 0, 0, 255], [163, 0, 0, 255], [159, 0, 0, 255], [154, 0, 0, 255], [150, 0, 0, 255], [145, 0, 0, 255], [141, 0, 0, 255], [136, 0, 0, 255], [132, 0, 0, 255]];
+    
+   /* 
+   jet_array = [[0,0,127],[0,0,132],[0,0,136],[0,0,141],[0,0,145],[0,0,150],[0,0,154],[0,0,159],[0,0,163],
                      [0,0,168],[0,0,172],[0,0,177],[0,0,181],[0,0,186],[0,0,190],[0,0,195],[0,0,199],[0,0,204],
                      [0,0,208],[0,0,213],[0,0,218],[0,0,222],[0,0,227],[0,0,231],[0,0,236],[0,0,240],[0,0,245],
                      [0,0,249],[0,0,254],[0,0,255],[0,0,255],[0,0,255],[0,0,255],[0,3,255],[0,7,255],[0,11,255],
@@ -299,6 +313,7 @@
                      [222,0,0],[218,0,0],[213,0,0],[208,0,0],[204,0,0],[199,0,0],[195,0,0],[190,0,0],[186,0,0],
                      [181,0,0],[177,0,0],[172,0,0],[168,0,0],[163,0,0],[159,0,0],[154,0,0],[150,0,0],[145,0,0],
                      [141,0,0],[136,0,0],[132,0,0]];
+    */
     
     function add_image(data) {
         var canvas = document.createElement('canvas');
@@ -382,7 +397,7 @@
         this.source_data = [];
         //for (var i=0; i<this.dims.ydim; i++) {
         for (var i=0; i<new_data.length; i++) { 
-            this.source_data.push(new_data[i].slice());
+            this.source_data[i] = new_data[i].slice();
         }
         
         this.data = [[this.dims.xmin, this.dims.ymin],
@@ -476,11 +491,11 @@
         if (isNaN(tzmin)) tzmin = get_minimum(this.source_data, this.t);
         this.dims.zmin = this.tinv(tzmin);
         var data = this.source_data; 
-        var plotdata = [], datarow;
+        var plotdata = [];
         
         // plotdata is stored in row-major order ("C"), where row is "y"
         for (var r = 0; r < height; r++) {
-            datarow = [];
+            plotdata[r] = [];
             for (var c = 0; c < width; c++) {
                 var z = data[r][c];
                 var plotz = Math.floor(((this.t(z) - tzmin) / (tzmax - tzmin)) * maxColorIndex);
@@ -488,9 +503,8 @@
                 if (isNaN(plotz) || (z == null)) { plotz = overflowIndex }
                 else if (plotz > maxColorIndex) { plotz = maxColorIndex }
                 else if (plotz < 0) { plotz = 0 }
-                datarow.push(plotz);
+                plotdata[r][c]=plotz;
             }
-            plotdata.push(datarow.slice());
         }
         this.plotdata = plotdata;
     };

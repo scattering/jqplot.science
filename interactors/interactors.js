@@ -3,7 +3,7 @@
 // # by Ophir Lifshitz #
 // # Aug, 2011         #
 // #####################
-debug = true;
+debug = false;
 
 (function($) {
     function toArray(obj) {
@@ -17,6 +17,34 @@ debug = true;
     };
 
     $.jqplot.Interactor = function(){
+    };
+    
+    var touchToMouse = function(event) {
+        //if (event.touches.length > 1) return; //allow default multi-touch gestures to work
+        var touch = event.changedTouches[0];
+        touch.data = event.data;
+        var type = "";
+        
+        switch (event.type) {
+        case "touchstart": 
+            type = "mousedown"; break;
+        case "touchmove":  
+            type="mousemove";   break;
+        case "touchend":   
+            type="mouseup";     break;
+        default: 
+            return;
+        }
+        
+        // https://developer.mozilla.org/en/DOM/event.initMouseEvent for API
+        var simulatedEvent = document.createEvent("MouseEvent");
+        simulatedEvent.initMouseEvent(type, true, true, window, 1, 
+                touch.screenX, touch.screenY, 
+                touch.clientX, touch.clientY, false, 
+                false, false, false, 0, null);
+        
+        touch.target.dispatchEvent(simulatedEvent);
+        event.preventDefault();
     };
     
     // called with scope of a series
@@ -37,8 +65,8 @@ debug = true;
         this.mousedown = false;
         this.curgrob = null;
         
-        this.color1 = '#69f';
-        this.color2 = '#f69';
+        this.color1 = '#6699ff';
+        this.color2 = '#ff6699';
         this.color = this.color1;
         
         this.rc = 1;//Math.random();
@@ -49,6 +77,10 @@ debug = true;
             this.canvas.onmousemove = bind(this, this.onMouseMove);
             this.canvas.onmousedown = bind(this, this.onMouseDown);
             this.canvas.onmouseup   = bind(this, this.onMouseUp);
+            
+            this.canvas.ontouchstart = touchToMouse;
+            this.canvas.ontouchmove = touchToMouse;
+            this.canvas.ontouchend = touchToMouse;
         }
     },
 
@@ -551,10 +583,10 @@ debug = true;
     $.jqplot.QuadraticInteractor.prototype.constructor = $.jqplot.QuadraticInteractor;    
     $.jqplot.QuadraticInteractor.prototype.init = function(canvasid) {
         $.jqplot.Interactor.prototype.init.call(this, 'Quadratic', 'quadratic.png', 0, canvasid);
-        var peak = new $.jqplot.Point(); peak.initialize(this, 150, 100);
         var p1 = new $.jqplot.Point(); p1.initialize(this, 200, 150);
-        this.quadratic = new $.jqplot.Quadratic(); this.quadratic.initialize(this, peak, p1, 4);
-        this.grobs.push(this.quadratic, peak, p1);
+        var p2 = new $.jqplot.Point(); p2.initialize(this, 150, 100);
+        this.quadratic = new $.jqplot.Quadratic(); this.quadratic.initialize(this, p1, p2, 4);
+        this.grobs.push(this.quadratic, p1, p2);
         
         this.redraw();
     };
@@ -568,10 +600,10 @@ debug = true;
     $.extend($.jqplot.GaussianInteractor.prototype, {
         init: function(canvasid) {
             $.jqplot.Interactor.prototype.init.call(this, 'Gaussian', 'gaussian.png', 0, canvasid);
-            var peak = new $.jqplot.Point(); peak.initialize(this, 150, 100);
-            var p1 = new $.jqplot.Point(); p1.initialize(this, 200, 150);
-            var gaussian = new $.jqplot.Gaussian(); gaussian.initialize(this, peak, p1, 4);
-            this.grobs.push(gaussian, peak, p1);
+            var pw = new $.jqplot.Point(); pw.initialize(this, 200, 200);
+            var pk = new $.jqplot.Point(); pk.initialize(this, 150, 100);
+            var gaussian = new $.jqplot.Gaussian(); gaussian.initialize(this, pk, pw, 4);
+            this.grobs.push(gaussian, pk, pw);
             this.gaussian = gaussian;
             
             this.redraw();
@@ -634,7 +666,7 @@ debug = true;
         updateListeners: function() {
             for (var i in this.listeners) {
                 var pos = this.getCoords? this.getCoords() : this.pos;
-                this.listeners[i].update(pos);
+                this.listeners[i].update(pos, [this]);
             }
         },
         
@@ -973,6 +1005,43 @@ debug = true;
         }
     });
     
+    $.jqplot.Polygon = function() {};
+    $.jqplot.Polygon.prototype = new $.jqplot.GrobConnector();
+    $.jqplot.Polygon.prototype.constructor = $.jqplot.Polygon;    
+    $.extend($.jqplot.Polygon.prototype, {        
+        initialize: function(parent, points, width) {
+            $.jqplot.GrobConnector.prototype.initialize.call(this, parent, width);
+            this.name = 'polygon';
+            this.points = points;
+            this.filled = true;
+        },
+        
+        
+        render: function(ctx) {
+            $.jqplot.GrobConnector.prototype.render.call(this, ctx);
+            
+            var numPoints = this.points.length;
+            ctx.beginPath();
+            ctx.moveTo(this.points[0].pos.x, this.points[0].pos.y);
+            for (var i=0; i<numPoints; i++) {
+                ctx.lineTo(this.points[i].pos.x, this.points[i].pos.y);
+            }
+            ctx.lineTo(this.points[0].pos.x, this.points[0].pos.y);
+            ctx.closePath();
+            ctx.stroke();
+            if (this.filled) {
+                ctx.globalAlpha = 0.4;
+                ctx.fill();
+                ctx.globalAlpha = 0.6;
+            }
+            
+        },
+        
+        isInside: function(pos) {
+            return false;
+        }
+    });
+    
     $.jqplot.Center = function() {};
     $.jqplot.Center.prototype = new $.jqplot.Point();
     $.jqplot.Center.prototype.constructor = $.jqplot.Center;    
@@ -1213,32 +1282,26 @@ debug = true;
     $.jqplot.Quadratic.prototype = new $.jqplot.FunctionConnector();
     $.jqplot.Quadratic.prototype.constructor = $.jqplot.Quadratic;    
     $.extend($.jqplot.Quadratic.prototype, {        
-        initialize: function(parent, peak, p1, width) {
+        initialize: function(parent, p1, p2, width) {
             $.jqplot.FunctionConnector.prototype.initialize.call(this, parent, width);
             this.name = 'quadratic';
             this.f = this.quadratic;
-            this.c = peak;
+            this.points = { p1: p1, p2: p2 };
             this.p1 = p1;
+            this.p2 = p2;
+            this.c = p1;
         },
         render: function(ctx) {
             $.jqplot.FunctionConnector.prototype.render.call(this, ctx);
             
-            // Correct the coordinate system
-            // Unfortunately, the default is to center the y axis on the center
-            // point, but leave the x axis at zero.
-            var nx = this.parent.canvas.width,
-                ny = this.parent.canvas.height,
-                cy = this.c.pos.y,
-                cx = this.c.pos.x,
-                wx = this.p1.pos.x,
-                wy = cy  - this.p1.pos.y;
-            this.pars = { x0: cx, C: 0, A: wx==cx?0:wy/(wx-cx)/(wx-cx) };
-            this.drawEq(ctx, bind(this, this.f), 0, cy, 0, nx);
+            this.drawEq(ctx, bind(this, this.f), 0, this.c.pos.y, 0, this.parent.canvas.width);
         },
         
         quadratic: function(x) {
-            var dx = x - this.pars.x0;
-            return (this.pars.A*dx*dx + this.pars.C);
+            var center = this.p1.pos.x, offset = this.p1.pos.y,
+                dx = (this.p2.pos.x-center), dy=(this.p2.pos.y-offset),
+                a = (x-center)/dx;
+            return -dy*a*a;
         }
     });
     
@@ -1246,44 +1309,34 @@ debug = true;
     $.jqplot.Gaussian.prototype = new $.jqplot.FunctionConnector();
     $.jqplot.Gaussian.prototype.constructor = $.jqplot.Gaussian;    
     $.extend($.jqplot.Gaussian.prototype, {        
-        initialize: function(parent, peak, p1, width) {
+        initialize: function(parent, pk, pw, width) {
             $.jqplot.FunctionConnector.prototype.initialize.call(this, parent, width);
             
             this.name = 'gaussian';
             this.f = this.gaussian;
-            this.c = peak;
-            this.p1 = p1;
+            this.points = { pk: pk, pw: pw };
+            this.pk = pk;
+            this.pw = pw;
+            this.c = pw;
         },
         render: function(ctx) {
-            // Correct the coordinates system, with 
-            var nx = this.parent.canvas.width,
-                cx = this.c.pos.x,
-                cy = this.c.pos.y,
-                wx = this.p1.pos.x,
-                wy = cy - this.p1.pos.y;
-            // Determine gaussian parameters from the coordinates
-            var height =  2*wy,
-                bkgd = -2*height,
-                FWHM = 2*Math.abs(wx - cx),
-                stdDev = FWHM / Math.sqrt(Math.log(256));
-            this.pars = { center: cx, stdDev: stdDev, height: height, bkgd: bkgd };
-
-            // Render the function
             $.jqplot.FunctionConnector.prototype.render.call(this, ctx);
-            this.drawEq(ctx, bind(this, this.f), 0, cy, 0, nx);
+            this.drawEq(ctx, bind(this, this.f), 0, this.c.pos.y, 0, this.parent.canvas.width);
         },
         
         gaussian: function(x) {
-            // Compute the gaussian value from the parameters
-            var resid = (x - this.pars.center)/this.pars.stdDev;
-            return this.pars.height - this.pars.height * Math.exp(-0.5 * resid * resid);
+            var peakX = this.pk.pos.x,
+                peakY = this.c.pos.y - this.pk.pos.y,
+                FWHM = Math.abs(this.c.pos.x - peakX),
+                bkgdY = 0;
+            var stdDev = FWHM / 2 / Math.sqrt(2 * Math.log(2));
+            //return - peakY + Math.pow(x - 150, 2) / 100;
+            return bkgdY + (peakY - bkgdY) * Math.exp(- Math.pow((x - peakX), 2) / 2 / Math.pow(stdDev, 2));
         }
     });
     
     $.jqplot.dist = function(a, b) {
-        var dx = a.x - b.x,
-            dy = a.y - b.y;
-        return Math.sqrt(dx*dx + dy*dy);
+        return Math.sqrt(Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2));
     };
     
     var dist = $.jqplot.dist;

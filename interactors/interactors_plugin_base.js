@@ -4,7 +4,7 @@
 // # 10/14/2011                                #
 // #############################################
 
-// ## requires interactors.js 
+// ## requires interactors_nonprototype.js 
 
 (function($) {
     function toArray(obj) {
@@ -33,6 +33,7 @@
             this.state = null;
             this.plot = null;
             this.translatable = true;
+            this.notMaster = true;
 
             this.grobs = [];
             this.mousedown = false;
@@ -43,6 +44,8 @@
             this.color = this.color1;
             
             this.rc = 1;//Math.random();
+            this.scrollZoom = true;
+            this.dragPan = true;
             this.show = true;
             $.extend(true, this, options);
             
@@ -60,6 +63,18 @@
             for (var i=0; i<this.grobs.length; i++) {
                 var g = this.grobs[i];
                 if (g.reset) g.reset();
+            }
+        },
+        
+        redraw: function() {
+            // unlike the non-plugin interactors, each plugin interactor has
+            // its own context and canvas, so clear them at each redraw:
+            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            if (this.show) {
+                for (var i = 0; i < this.grobs.length; i ++) {
+                    var grob = this.grobs[i];
+                    grob.render(this.context);
+                }
             }
         },
         
@@ -114,10 +129,9 @@
             this.state = null;
             this.plot = null;
             this.translatable = true;
-            
 
             this.grobs = [];
-            this.mousedown = false;
+            this.mousedown = {};
             this.curgrob = null;
             
             this.color1 = '#6699ff';
@@ -125,7 +139,12 @@
             this.color = this.color1;
             
             this.rc = 1;//Math.random();
+            this.forceload = false; // make the master initialize, even if no other interactors
+            this.scrollZoom = true;
+            this.rightZoom = true;
+            this.dragPan = true;
             $.extend(true, this, options);
+            this.notMaster = false;
             this.interactors = []; // number of interactors
             this.generate_ticks = generate_ticks;
         },
@@ -191,63 +210,72 @@
         },
         
         onMouseDown: function(e) {
-            this.mousedown = true;
-            var pos = this.getMouse(e);
-            this.prevpos = pos;
-            for (var i = 0; i < this.grobs.length; i ++) {
-                var g = this.grobs[i];
+            var master = e.data.master;
+            var ev = e.originalEvent;
+            ev.preventDefault();
+            ev.stopPropagation();
+            var which = ev.which;
+            master.mousedown[which] = true;
+            var pos = master.getMouse(ev);
+            master.prevpos = pos;
+            for (var i = 0; i < master.grobs.length; i ++) {
+                var g = master.grobs[i];
                 var inside = g.isInside(pos);
                 
                 if (inside) {
-                    //this.prevpos = pos;
-                    this.curgrob = i;
+                    master.curgrob = i;
                     g.prevpos = pos;
                 }
             }
+            return false;
             //console.log('down', /*this.grobs,*/ pos.x, pos.y, 'mousedown=',this.mousedown);
         },
         
-        handleMouseDown: function(ev, gridpos, datapos, neighbor, plot) {
-            console.log(this);
-            this.mousedown = true;
-            var pos = gridpos;
-            var coords = datapos;
-            this.prevpos = pos;
-            for (var i = 0; i < this.grobs.length; i ++) {
-                var g = this.grobs[i];
-                var inside = g.isInside(pos);
-                
-                if (inside) {
-                    //this.prevpos = pos;
-                    this.curgrob = i;
-                    g.prevpos = pos;
-                }
+        onMouseUp:   function(e) {
+            var master = e.data.master;
+            var ev = e.originalEvent;
+            var which = ev.which;
+            master.mousedown[which] = false;
+            var pos = master.getMouse(ev);
+            master.prevpos = null;
+            if (master.curgrob != null) {
+                master.grobs[master.curgrob].onDrop(e, pos);
+                master.onDrop(e, pos);
             }
+            master.curgrob = null;
+            //console.log('up  ', /*this.grobs,*/ pos.x, pos.y, 'mousedown=',this.mousedown);
+            master.redraw();
         },
         
         onDoubleClick: function(e) {
-            e.preventDefault();
-            e.stopPropagation();
+            var master = e.data.master;
+            var ev = e.originalEvent;
             
-            var pos = this.getMouse(e);
+            ev.preventDefault();
+            ev.stopPropagation();
+            
+            var pos = master.getMouse(ev);
             var sel_grob = null;
-            for (var i = 0; i < this.grobs.length; i ++) {
-                var g = this.grobs[i];
+            var sel_grob_num = null;
+            //console.log(pos);
+            for (var i = 0; i < master.grobs.length; i ++) {
+                var g = master.grobs[i];
                 var inside = g.isInside(pos);
                 
                 if (inside) {
                     //this.prevpos = pos;
-                    sel_grob = i;
+                    sel_grob_num = i;
+                    sel_grob = g;
                 }
             }
-            //console.log("double-clicked:", sel_grob);
-            if (sel_grob == null) {
+            //console.log("double-clicked:", sel_grob.parent);
+            if (sel_grob_num == null) {
                 // then we're double-clicking outside all the interactors
-                this.zoomMax();
+                master.zoomMax();
             } else {
-                g.parent.reset();
-                this.redraw();
-                this.redraw();
+                sel_grob.parent.onDoubleClick(sel_grob, pos);
+                //this.redraw();
+                //this.redraw();
             }
                 
             return false;
@@ -261,6 +289,7 @@
         },
         
         redraw: function() {
+            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.grobs = [];
             for (var i in this.interactors) {
                 var I = this.interactors[i];
@@ -270,92 +299,66 @@
                 }
             }
         },
-        
         onMouseWheel: function(e) {
-            if (e.preventDefault) e.preventDefault();
-            if (e.stopPropagation) e.stopPropagation();
-            var pos = this.getMouse(e);
-            var dzoom;
-            if (e.wheelDelta) { dzoom = e.wheelDelta; }
-            else if (e.detail) { dzoom = e.detail * -40; }
-            else { dzoom = 0 } 
-            this.zoomPlot(dzoom, pos);
+            var master = e.data.master;
+            var e = e.originalEvent;
+            if (master.scrollZoom) {
+                if (e.preventDefault) e.preventDefault();
+                if (e.stopPropagation) e.stopPropagation();
+                var pos = master.getMouse(e);
+                var dzoom;
+                if (e.wheelDelta) { dzoom = e.wheelDelta; }
+                else if (e.detail) { dzoom = e.detail * -40; }
+                else { dzoom = 0 }
+                // make a zoom of 120 = 10% change in axis limits
+                var conv = dzoom * 0.2/120;
+                // zooom x and y the same amount:
+                master.zoomPlot(conv, conv, pos);
+            }
         },
         
         onMouseMove: function(e) {
-            //console.log('mousemove');
-            var pos = this.getMouse(e);
-            //console.log('move', this.grobs, pos.x, pos.y, this.mousedown);
-            var i = 0, inside = false;
-            if (this.mousedown) {
-                if (this.curgrob != null) {
-                    var cg = this.grobs[this.curgrob];
-                    cg.onDrag(e, pos);
-                    //cg.parent.redraw();
-                    this.redraw();
-                } else {
-                    this.onEmptyDrag(pos);
-                }
-            } else {
-                while (i < this.grobs.length) {
-                    var g = this.grobs[i];
-                    inside = g.isInside(pos);
-                    if (inside) {
-                        g.onMouseOver(e);
-                        g.parent.onMouseOver(e);
-                        this.redraw();
+            //console.log('move', this.grobs, e.clientX, e.clientY, this.mousedown);
+            setTimeout( function() { // returns immediately... makes responsive
+                var master = e.data.master;               
+                var pos = master.getMouse(e.originalEvent);
+                var i = 0, inside = false;
+                if (master.mousedown[1] == true) {                    
+                    if (master.curgrob != null) {
+                        var cg = master.grobs[master.curgrob];
+                        cg.onDrag(e, pos);
+                        master.redraw();
                     } else {
-                        if (g.inside) {
-                            g.onMouseOut(e);
-                            g.parent.onMouseOut(e);
-                            this.redraw();
-                        }
+                        master.onEmptyDrag(pos);
                     }
-                    i++;
+                } else if (master.mousedown[3] == true) {
+                    master.onEmptyDrag(pos);
+                } else {
+                    while (i < master.grobs.length) {
+                        var g = master.grobs[i];
+                        inside = g.isInside(pos);
+                        if (inside) {
+                            g.onMouseOver(e);
+                            g.parent.onMouseOver(e);
+                            master.redraw();
+                        } else {
+                            if (g.inside) {
+                                g.onMouseOut(e);
+                                g.parent.onMouseOut(e);
+                                master.redraw();
+                            }
+                        }
+                        i++;
+                    }
                 }
-            }
-            //this.redraw();    
+                //this.redraw(); 
+            }, 0);
+            return false;
         },
         
         onEmptyDrag: function(pos) {
-            this.panPlot(pos);
-        },
-        
-        zoomMax: function() {
-            // zoom to the limits of the data, with good tick locations
-            var xmin = this.plot.series[0]._xaxis._dataBounds.min;
-            var xmax = this.plot.series[0]._xaxis._dataBounds.max;
-            var ymin = this.plot.series[0]._yaxis._dataBounds.min;
-            var ymax = this.plot.series[0]._yaxis._dataBounds.max;
-            var xtransf = this.plot.series[0]._xaxis.transform || 'lin';
-            var ytransf = this.plot.series[0]._yaxis.transform || 'lin';
-            this.plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
-            this.plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
-            this.plot.replot();
-        },
-        
-        zoomPlot: function(dzoom, centerpos) {
-            var center = this.getCoords(centerpos);
-            // make a zoom of 120 = 10% change in axis limits
-            var conv = dzoom * 0.2/120;
-            
-            var xtransf = this.plot.series[0]._xaxis.transform || 'lin';
-            var ytransf = this.plot.series[0]._yaxis.transform || 'lin';
-            var xmin = this.plot.series[0]._xaxis.min;
-            var xmax = this.plot.series[0]._xaxis.max;
-            if (!this.fix_x) {
-                xmin += (center.x - xmin) * conv;
-                xmax += (center.x - xmax) * conv;
-            }
-            if (!this.fix_y) {
-                var ymin = this.plot.series[0]._yaxis.min;
-                var ymax = this.plot.series[0]._yaxis.max;
-            }
-            ymin += (center.y - ymin) * conv;
-            ymax += (center.y - ymax) * conv;
-            this.plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
-            this.plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
-            this.plot.redraw();
+            if (this.dragPan == true && this.mousedown[1] == true) this.panPlot(pos);
+            else if (this.rightZoom == true && this.mousedown[3] == true) this.doRightZoom(pos);
         },
         
         panPlot: function(pos) {
@@ -373,6 +376,60 @@
             this.plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
             this.plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
             this.plot.redraw();
+        },
+        
+        zoomMax: function() {
+        var xdb = this.plot.series[0]._xaxis._dataBounds;
+        var ydb = this.plot.series[0]._yaxis._dataBounds;
+        if ((xdb.min != null) && (xdb.max != null) && (ydb.min != null) && (ydb.max != null)) {
+                // zoom to the limits of the data, with good tick locations
+                var xmin = xdb.min;
+                var xmax = xdb.max;
+                var ymin = ydb.min;
+                var ymax = ydb.max;
+                var xtransf = this.plot.series[0]._xaxis.transform || 'lin';
+                var ytransf = this.plot.series[0]._yaxis.transform || 'lin';
+                this.plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
+                this.plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
+                this.plot.replot();
+            }
+        },
+        
+        zoomPlot: function(dzoomx, dzoomy, centerpos) {
+            var center = this.getCoords(centerpos);
+            
+            var xtransf = this.plot.series[0]._xaxis.transform || 'lin';
+            var ytransf = this.plot.series[0]._yaxis.transform || 'lin';
+            var xmin = this.plot.series[0]._xaxis.min;
+            var xmax = this.plot.series[0]._xaxis.max;
+            if (!this.fix_x) {
+                xmin += (center.x - xmin) * dzoomx;
+                xmax += (center.x - xmax) * dzoomx;
+            }
+            if (!this.fix_y) {
+                var ymin = this.plot.series[0]._yaxis.min;
+                var ymax = this.plot.series[0]._yaxis.max;
+            }
+            ymin += (center.y - ymin) * dzoomy;
+            ymax += (center.y - ymax) * dzoomy;
+            this.plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
+            this.plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
+            this.plot.redraw();
+        },
+        
+        doRightZoom: function(pos) {
+            var newcoords = this.getCoords(pos);
+            var prevcoords = this.getCoords(this.prevpos);
+            this.prevpos = pos;
+            var dx = newcoords.x - prevcoords.x;
+            var dy = newcoords.y - prevcoords.y;
+            var xrange = Math.abs(this.plot.series[0]._xaxis.max - this.plot.series[0]._xaxis.min);
+            var yrange = Math.abs(this.plot.series[0]._yaxis.max - this.plot.series[0]._yaxis.min);
+            var xcenter = 0.5 * (this.plot.series[0]._xaxis.max + this.plot.series[0]._xaxis.min);
+            var ycenter = 0.5 * (this.plot.series[0]._yaxis.max + this.plot.series[0]._yaxis.min);
+            var centerpos = this.putCoords({'x': xcenter, 'y': ycenter});
+            if (xrange == 0 || yrange == 0) return;
+            this.zoomPlot((2.0 * dx / xrange), (2.0 * dy / yrange), centerpos);
         }
     });
     
@@ -381,7 +438,7 @@
         
         var ec = this.eventCanvas._ctx.canvas;
         var master = this.plugins._interactor;
-        if (master && master.interactors && master.interactors.length > 0) {
+        if ((master && master.forceload) || (master && master.interactors && master.interactors.length > 0)) {
             master.Canvas = new $.jqplot.GenericCanvas();
             this.eventCanvas._elem.before(master.Canvas.createElement(this._gridPadding, 'jqplot-interactor-canvas', this._plotDimensions, this));
             master.Canvas.setContext();
@@ -390,13 +447,22 @@
             //master.context.globalAlpha = 0.6;
             //master.context.lineJoin = 'round';
             
-            ec.onmousemove = bind(master, master.onMouseMove);
-            ec.onmousedown = bind(master, master.onMouseDown);
+            //ec.onmousemove = bind(master, master.onMouseMove);
+            $(ec).on('mousemove', {master:master}, master.onMouseMove);
+            $(ec).on('mousedown', {master:master}, master.onMouseDown);
             
-            ec.onmouseup = bind(master, master.onMouseUp);
-            ec.onmousewheel = bind(master, master.onMouseWheel);
-            ec.ondblclick = bind(master, master.onDoubleClick);
-            ec.onselectstart = function() { return false; };
+            $(ec).on('mouseup', {master:master}, master.onMouseUp);
+            $(ec).on('mousewheel', {master:master}, master.onMouseWheel);
+            $(ec).on('DOMMouseScroll', {master:master}, master.onMouseWheel);
+            
+            $(ec).on('dblclick', {master:master}, master.onDoubleClick);
+            $(ec).on('selectstart', {}, function() { return false; }); // turn these off.
+            $(ec).on('contextmenu', {}, function() { return false; });
+            
+            /*
+            ec.ontouchstart = touchToMouse;
+            ec.ontouchmove = touchToMouse;
+            ec.ontouchend = touchToMouse;
             
             if (!ec._touchstartregistered && ec.addEventListener) {
                 ec.addEventListener('touchstart', function(event) {
@@ -419,12 +485,15 @@
                 ec._touchendregistered = true;
             }
             
+           
+            
             if (!ec._scrollregistered && ec.addEventListener) {
                 ec.addEventListener('DOMMouseScroll', function(event) {
-                    ec.onmousewheel(event);
+                    $(ec).trigger('mousewheel', [event]);
                 });
                 ec._scrollregistered = true;
             }
+            */
             
             for (var i in this.plugins.interactors) {
                 var I = this.plugins.interactors[i];
@@ -464,25 +533,33 @@
         if (options.interactors) {
             if (!this.plugins.interactors) this.plugins.interactors = {};
             this.plugins._interactor = new $.jqplot.MasterInteractorPlugin();
-            this.plugins._interactor.init();
+            var master_opts = {}
+            for (var i in options.interactors) {
+                var iopts = options.interactors[i];
+                var itype = iopts.type;
+                if (itype == 'master') {
+                    master_opts = iopts;
+                    break
+                }
+            }
+            this.plugins._interactor.init(master_opts);
             this.plugins._interactor.plot = this;
             this.plugins._interactor.name = "master";
-            //var master = this.plugins._interactor;
-            //this.eventListenerHooks.addOnce('jqplotMouseDown', bind(master, master.handleMouseDown));
-            
             
             for (var i in options.interactors) {
                 var iopts = options.interactors[i];
                 var itype = iopts.type;
-                var name = iopts.name || String(this.plugins.interactors.length);
-                var newi = new $.jqplot.InteractorPluginSubtypes[itype]();
-                this.plugins.interactors[name] = newi;
-                newi.init(iopts);
-                newi.plot = this;
-                //for (var j in newi.grobs) {
-                //    this.plugins._interactor.grobs.push(newi.grobs[j]);
-                //}
-                this.plugins._interactor.interactors.push(newi);
+                if (itype != 'master') {
+                    var name = iopts.name || String(this.plugins.interactors.length);
+                    var newi = new $.jqplot.InteractorPluginSubtypes[itype]();
+                    this.plugins.interactors[name] = newi;
+                    newi.init(iopts);
+                    newi.plot = this;
+                    //for (var j in newi.grobs) {
+                    //    this.plugins._interactor.grobs.push(newi.grobs[j]);
+                    //}
+                    this.plugins._interactor.interactors.push(newi);
+                }
             }
         }    
     };
@@ -517,20 +594,23 @@
             return this.coords;
         },
         
-        update: function(coords, fix_x, fix_y) {
-            var coords = coords || this.coords;
-            var newpos = this.putCoords(coords);
-            if ('x' in newpos) this.pos.x = newpos.x;
-            if ('y' in newpos) this.pos.y = newpos.y;
-            this.coords = coords;
-            this.updateListeners();
+        update: function(coords, updated_already) {
+            if (updated_already && updated_already.indexOf && updated_already.indexOf(this) == -1) {
+                var coords = coords || this.coords;
+                var newpos = this.putCoords(coords);
+                if ('x' in newpos) this.pos.x = newpos.x;
+                if ('y' in newpos) this.pos.y = newpos.y;
+                this.coords = coords;
+                updated_already.push(this);
+                this.updateListeners(updated_already);
 //            var mypos = this.pos;
 //            var dpos = {x: newpos.x-mypos.x, y: newpos.y-mypos.y};
 
 //            if (fix_x) { dpos.x = 0; };
 //            if (fix_y) { dpos.y = 0; };
 //            this.translateBy(dpos);
-            this.parent.redraw();
+                this.parent.redraw();
+            }
         },
         
         translateBy: function(dpos) {
@@ -539,40 +619,43 @@
             if (dpos.y)
                 this.pos.y += dpos.y;
             this.coords = this.getCoords();
-            this.updateListeners();
+            this.updateListeners([this]);
         },
         
-        updateListeners: function() {
+        updateListeners: function(updated_already) {
+            var updated_already = updated_already || [this];
             for (var i in this.listeners) {
-                this.listeners[i].update(this.coords);
+                this.listeners[i].update(this.coords, updated_already);
             }
         },
         
-        putCoords: function(coords) {
+        putCoords: function(coords, setPos) {
             var coords = coords || this.coords;
             var pos = {};
             if ('x' in coords) {
                 pos.x = this.parent.plot.axes.xaxis.u2p(coords.x);
                 pos.x -= this.parent.canvas.offsetLeft;
+                if (setPos) { this.pos.x = pos.x; } 
             }
             if ('y' in coords) {
                 pos.y = this.parent.plot.axes.yaxis.u2p(coords.y);
                 pos.y -= this.parent.canvas.offsetTop;
+                if (setPos) { this.pos.y = pos.y; } 
             }
             return pos     
         },
         
         render: function(ctx) {
-	        ctx.fillStyle = this.color;
-	        ctx.strokeStyle = 'transparent';
+            ctx.fillStyle = this.color;
+            //ctx.strokeStyle = 'transparent';
             ctx.beginPath();
-	        //var coords = this.getCoords();
-	        this.pos = this.putCoords();
-	        ctx.fillText('(' + this.coords.x.toFixed(3) + ', ' + this.coords.y.toFixed(3) + ')', this.pos.x, this.pos.y - 5);
-	        ctx.arc(this.pos.x, this.pos.y, this.r, 0, Math.PI * 2, true);
-	        ctx.closePath();
-	        ctx.stroke();
-	        ctx.fill();
+            //var coords = this.getCoords();
+            this.pos = this.putCoords();
+            ctx.fillText('(' + this.coords.x.toFixed(3) + ', ' + this.coords.y.toFixed(3) + ')', this.pos.x, this.pos.y - 5);
+            ctx.arc(this.pos.x, this.pos.y, this.r, 0, Math.PI * 2, true);
+            //ctx.closePath();
+            //ctx.stroke();
+            ctx.fill();
         }
     });
     
@@ -587,21 +670,21 @@
         },
         
         render: function(ctx) {
-	        ctx.fillStyle = this.color;
-	        ctx.strokeStyle = 'transparent';
+            ctx.fillStyle = this.color;
+            //ctx.strokeStyle = 'transparent';
             ctx.beginPath();
-	        //ctx.moveTo(this.x, this.y);
-	        var coords = this.coords;
-	        this.pos = this.putCoords();
-	        ctx.fillText('(' + coords.x.toFixed(3) + ', ' + coords.y.toFixed(3) + ')', this.pos.x, this.pos.y - 5);
+            //ctx.moveTo(this.x, this.y);
+            var coords = this.coords;
+            this.pos = this.putCoords();
+            ctx.fillText('(' + coords.x.toFixed(3) + ', ' + coords.y.toFixed(3) + ')', this.pos.x, this.pos.y - 5);
             //ctx.fillText('(' + this.pos.x.toFixed(0) + ', ' + this.pos.y.toFixed(0) + ')', this.pos.x, this.pos.y - 5);
-	        ctx.moveTo(this.pos.x + this.r, this.pos.y);
-	        ctx.lineTo(this.pos.x, this.pos.y + this.r);
-	        ctx.lineTo(this.pos.x - this.r, this.pos.y);
-	        ctx.lineTo(this.pos.x, this.pos.y - this.r);
-	        ctx.closePath();
-	        ctx.stroke();
-	        ctx.fill();
+            ctx.moveTo(this.pos.x + this.r, this.pos.y);
+            ctx.lineTo(this.pos.x, this.pos.y + this.r);
+            ctx.lineTo(this.pos.x - this.r, this.pos.y);
+            ctx.lineTo(this.pos.x, this.pos.y - this.r);
+            ctx.closePath();
+            //ctx.stroke();
+            ctx.fill();
         },
 
         onDrag: function(e, pos) {
@@ -772,22 +855,4 @@
         return ticks; 
     };
     
-    function handleMouseDown(ev, gridpos, datapos, neighbor, plot) {
-//            if (neighbor) {
-//                var si = neighbor.seriesIndex;
-//                var pi = neighbor.pointIndex;
-//                var ins = [si, pi, neighbor.data, plot.series[si].gridData[pi][2]];
-//                if (plot.series[ins[0]].highlightMouseDown && !(ins[0] == plot.plugins.bubbleRenderer.highlightedSeriesIndex && ins[1] == plot.series[ins[0]]._highlightedPoint)) {
-//                    var evt = jQuery.Event('jqplotDataHighlight');
-//                    evt.pageX = ev.pageX;
-//                    evt.pageY = ev.pageY;
-//                    plot.target.trigger(evt, ins);
-//                    highlight (plot, ins[0], ins[1]);
-//                }
-//            }
-//            else if (neighbor == null) {
-//                unhighlight (plot);
-//            }
-            console.log(ev, gridpos, datapos, plot);
-        };
 })(jQuery);

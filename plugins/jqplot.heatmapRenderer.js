@@ -254,7 +254,6 @@
                 tz = tzarr[yoffset + xp];
                 //var plotz = Math.floor((tz - tzmin) / (tzmax - tzmin)) * maxColorIndex);
                 plotz = Math.floor((tz - tzmin) * norm);
-                //this.plotz[yoffset + xp] = plotz;
                 
                 if (isNaN(plotz) || (z == null)) { plotz = overflowIndex }
                 //else { plotz = Math.max(0, Math.min(plotz, maxColorIndex)); }
@@ -416,8 +415,10 @@
         }
     };
     
-    function set_transform(tform) {
+    function set_transform(tform, axis) {
         // only knows log and lin for now
+        var axis = axis || "zaxis";
+        if (axis != "zaxis") { throw "cannot transform axis other than z in heatmap" }
         this.transform = tform;
         if (tform=='log'){
             this.t = function(datum) {
@@ -529,8 +530,10 @@
                 var offset = 4*((r*width) + c);
                 //var z = data[c][height-r-1];
                 var z = data[r][c];
-                xsum += z;
-                ysum[r] += z;
+                if (isFinite(z)) {
+                    xsum += z;
+                    ysum[r] += z;
+                }
                 cumsum_x_col.push(xsum);
                 cumsum_y_col.push(ysum[r]);
                 

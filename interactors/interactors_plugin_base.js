@@ -451,7 +451,7 @@
             $(ec).on('mousemove', {master:master}, master.onMouseMove);
             $(ec).on('mousedown', {master:master}, master.onMouseDown);
             
-            $(ec).on('mouseup', {master:master}, master.onMouseUp);
+            $(window).on('mouseup', {master:master}, master.onMouseUp);
             $(ec).on('mousewheel', {master:master}, master.onMouseWheel);
             $(ec).on('DOMMouseScroll', {master:master}, master.onMouseWheel);
             

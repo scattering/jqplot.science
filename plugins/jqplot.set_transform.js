@@ -6,6 +6,8 @@
         var axis_table = {'x': 0, 'y': 1, 'z': 2};        
         if (!(axis[0] in axis_table)) { return }
         var ax = axis_table[axis[0]]; // based on first character of axis name
+        var axupper = axis[0] + 'upper';
+        var axlower = axis[0] + 'lower'; // for error bars
         this['_' + axis + '_transform'] = transform;
         if (ax == 2) { 
             // zaxis: pass this along to series renderers
@@ -27,12 +29,20 @@
                 if (transform == 'log') {
                     for (var j=0; j<pd.length; j++) {
                         pd[j][ax] = sd[j][ax]>0 ? Math.log(sd[j][ax]) / Math.LN10 : null;
+                        if (pd[j].length > 2) {
+                            pd[j][2][axupper] = d[j][2][axupper]>0 ? Math.log(d[j][2][axupper]) / Math.LN10 : null;
+                            pd[j][2][axlower] = d[j][2][axlower]>0 ? Math.log(d[j][2][axlower]) / Math.LN10 : null;
+                        }
                     }
                 } 
                 else { 
                     // linear
                     for (var j=0; j<pd.length; j++) {
                         pd[j][ax] = sd[j][ax];
+                        if (pd[j].length > 2) {
+                            pd[j][2][axupper] = d[j][2][axupper];
+                            pd[j][2][axlower] = d[j][2][axlower];
+                        }
                     }
                 }
             }

@@ -153,16 +153,16 @@
                 var xindex = parseInt(x);
                 var scol = this.plotdata[xindex];
                 x0 = Math.round(sxdx.dx + (x-sxdx.sx)*xzoom);
-		        for (var y=sy;y<ymax;y+=ystep){
-			        plotz = scol[parseInt(y)];
-			        y0 = Math.round(sxdx.dy + (y-sxdx.sy)*yzoom);
-		            //ctx.fillStyle = "rgba("+r+","+g+","+b+","+(a/255)+")";
-		            var rgba = this.palette_array[plotz];
-		            var alpha = (rgba[3] == undefined) ? "255" : rgba[3].toString();
-		            ctx.fillStyle = "rgba("+rgba[0]+","+rgba[1]+","+rgba[2]+","+alpha+")";
-		            ctx.fillRect(x0,y0,xw,yw);
-		        }
-	        }
+                for (var y=sy;y<ymax;y+=ystep){
+                    plotz = scol[parseInt(y)];
+                    y0 = Math.round(sxdx.dy + (y-sxdx.sy)*yzoom);
+                    //ctx.fillStyle = "rgba("+r+","+g+","+b+","+(a/255)+")";
+                    var rgba = this.palette_array[plotz];
+                    var alpha = (rgba[3] == undefined) ? "255" : rgba[3].toString();
+                    ctx.fillStyle = "rgba("+rgba[0]+","+rgba[1]+","+rgba[2]+","+alpha+")";
+                    ctx.fillRect(x0,y0,xw,yw);
+                }
+            }
         }
     };
     
@@ -180,10 +180,10 @@
         
         var dx0p = (this._xaxis.p2u(0 + this.canvas._offsets.left) - this.dims.xmin)/ this.dims.dx;
         var dy0p = (this._yaxis.p2u(0 + this.canvas._offsets.top) - this.dims.ymin) / this.dims.dy;
-	var y, x, dyp, dxp, fillstyle, suboffset, offset;
+        var y, x, dyp, dxp, fillstyle, suboffset, offset;
         for (y=0; y<height; y++) {
             dyp = Math.floor(dy0p + y * syp);
-	    suboffset = y * width * 4;
+            suboffset = y * width * 4;
             if (dyp >= 0 && dyp < this.dims.ydim) {
                 for (x=0; x<width; x++) {
                     dxp = Math.floor(dx0p + x * sxp);
@@ -494,7 +494,7 @@
         var plotdata = [], rowdata;
         
         // plotdata is stored in row-major order ("C"), where row is "y"
-	var z, r, c, plotz;
+        var z, r, c, plotz;
         for (r = 0; r < height; r++) {
             plotdata[r] = [];
             for (c = 0; c < width; c++) {

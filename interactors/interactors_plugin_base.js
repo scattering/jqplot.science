@@ -231,7 +231,7 @@
             //console.log('down', /*this.grobs,*/ pos.x, pos.y, 'mousedown=',this.mousedown);
         },
         
-        onMouseUp:   function(e) {
+        onMouseUp: function(e) {
             var master = e.data.master;
             var ev = e.originalEvent;
             var which = ev.which;
@@ -251,8 +251,8 @@
             var master = e.data.master;
             var ev = e.originalEvent;
             
-            ev.preventDefault();
-            ev.stopPropagation();
+            if (ev.preventDefault) ev.preventDefault();
+            if (ev.stopPropagation) ev.stopPropagation();
             
             var pos = master.getMouse(ev);
             var sel_grob = null;
@@ -301,14 +301,14 @@
         },
         onMouseWheel: function(e) {
             var master = e.data.master;
-            var e = e.originalEvent;
+            var ev = e.originalEvent;
             if (master.scrollZoom) {
-                if (e.preventDefault) e.preventDefault();
-                if (e.stopPropagation) e.stopPropagation();
-                var pos = master.getMouse(e);
+                if (ev.preventDefault) ev.preventDefault();
+                if (ev.stopPropagation) ev.stopPropagation();
+                var pos = master.getMouse(ev);
                 var dzoom;
-                if (e.wheelDelta) { dzoom = e.wheelDelta; }
-                else if (e.detail) { dzoom = e.detail * -40; }
+                if (ev.wheelDelta) { dzoom = ev.wheelDelta; }
+                else if (ev.detail) { dzoom = ev.detail * -40; }
                 else { dzoom = 0 }
                 // make a zoom of 120 = 10% change in axis limits
                 var conv = dzoom * 0.2/120;
@@ -402,16 +402,16 @@
             var ytransf = this.plot.series[0]._yaxis.transform || 'lin';
             var xmin = this.plot.series[0]._xaxis.min;
             var xmax = this.plot.series[0]._xaxis.max;
+            var ymin = this.plot.series[0]._yaxis.min;
+            var ymax = this.plot.series[0]._yaxis.max;
             if (!this.fix_x) {
                 xmin += (center.x - xmin) * dzoomx;
                 xmax += (center.x - xmax) * dzoomx;
             }
             if (!this.fix_y) {
-                var ymin = this.plot.series[0]._yaxis.min;
-                var ymax = this.plot.series[0]._yaxis.max;
+                ymin += (center.y - ymin) * dzoomy;
+                ymax += (center.y - ymax) * dzoomy;
             }
-            ymin += (center.y - ymin) * dzoomy;
-            ymax += (center.y - ymax) * dzoomy;
             this.plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
             this.plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
             this.plot.redraw();

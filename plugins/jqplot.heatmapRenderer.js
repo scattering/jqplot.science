@@ -488,7 +488,7 @@
         //var tzmin = get_minimum(this.source_data, this.t);
         //if (isNaN(tzmin)) tzmin = 0;
         
-        if (isNaN(tzmin)) tzmin = get_minimum(this.source_data, this.t);
+        if (!(isFinite(tzmin))) tzmin = get_minimum(this.source_data, this.t);
         this.dims.zmin = this.tinv(tzmin);
         var data = this.source_data; 
         var plotdata = [], rowdata;

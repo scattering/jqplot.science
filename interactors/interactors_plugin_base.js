@@ -451,8 +451,9 @@
             $(ec).on('mousemove', {master:master}, master.onMouseMove);
             $(ec).on('mousedown', {master:master}, master.onMouseDown);
             
-            $(window).off('mouseup.master_interactor'); // clear previous handler
-            $(window).on('mouseup.master_interactor', {master:master}, master.onMouseUp);
+            var plotid = this.targetId.replace(/#/, "");
+            $(window).off('mouseup.jqplot_interactor_' + plotid); // clear previous handler
+            $(window).on('mouseup.jqplot_interactor_' + plotid, {master:master}, master.onMouseUp);
             $(ec).on('mousewheel', {master:master}, master.onMouseWheel);
             $(ec).on('DOMMouseScroll', {master:master}, master.onMouseWheel);
             

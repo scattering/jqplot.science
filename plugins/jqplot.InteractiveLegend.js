@@ -44,7 +44,7 @@
                 label_elem.html(label);
             }
         //}
-        elem.click({legend: this}, handleClick);
+        tr.click({legend: this}, handleClick);
         tr = null;
         elem = null;
         label_elem = null;

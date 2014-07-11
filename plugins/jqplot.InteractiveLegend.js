@@ -21,10 +21,10 @@
         	elem,
         	label_elem;
         if (reverse){
-            tr = $('<tr class="jqplot-table-legend"></tr>').prependTo(this._elem);
+            tr = $('<tr class="jqplot-table-legend" series_num='+series_num+'></tr>').prependTo(this._elem);
         }
         else{
-            tr = $('<tr class="jqplot-table-legend"></tr>').appendTo(this._elem);
+            tr = $('<tr class="jqplot-table-legend" series_num='+series_num+'></tr>').appendTo(this._elem);
         }
         var color = series_show ? color : "transparent";
 

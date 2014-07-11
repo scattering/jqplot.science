@@ -18,7 +18,8 @@
     $.jqplot.InteractiveLegendRenderer.prototype.addrow = function (label, color, pad, reverse, series_num, series_show) {
         var rs = (pad) ? this.rowSpacing : '0';
         var tr,
-        	elem;
+        	elem,
+        	label_elem;
         if (reverse){
             tr = $('<tr class="jqplot-table-legend"></tr>').prependTo(this._elem);
         }
@@ -27,24 +28,26 @@
         }
         var color = series_show ? color : "transparent";
 
-            $('<td class="jqplot-table-legend" style="text-align:center;padding-top:'+rs+';">'+
+            elem = $('<td class="jqplot-table-legend" style="text-align:center;padding-top:'+rs+';">'+
             '<div><div class="jqplot-table-legend-swatch" style="background-color:'+color+
             ';border-color:'+color+';width:10px;height:10px;"></div>'+
-            '</div></td>').appendTo(tr);
+            '</div></td>');
+            elem.appendTo(tr);
         
         //if (this.showLabels) {
-            elem = $('<td class="jqplot-table-legend-label" style="padding-top:'+rs+';" series_num='+series_num+'></td>');
-            elem.appendTo(tr);
+            label_elem = $('<td class="jqplot-table-legend-label" style="padding-top:'+rs+';" series_num='+series_num+'></td>');
+            label_elem.appendTo(tr);
             if (this.escapeHtml) {
-                elem.text(label);
+                label_elem.text(label);
             }
             else {
-                elem.html(label);
+                label_elem.html(label);
             }
         //}
         elem.click({legend: this}, handleClick);
         tr = null;
         elem = null;
+        label_elem = null;
     };
     // 'width:10px;height:10px;
     // called with scope of legend

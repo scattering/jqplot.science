@@ -21,10 +21,10 @@
         	elem,
         	label_elem;
         if (reverse){
-            tr = $('<tr class="jqplot-table-legend" series_num='+series_num+'></tr>').prependTo(this._elem);
+            tr = $('<tr class="jqplot-table-legend"></tr>').prependTo(this._elem);
         }
         else{
-            tr = $('<tr class="jqplot-table-legend" series_num='+series_num+'></tr>').appendTo(this._elem);
+            tr = $('<tr class="jqplot-table-legend"></tr>').appendTo(this._elem);
         }
         var color = series_show ? color : "transparent";
 
@@ -35,7 +35,7 @@
             elem.appendTo(tr);
         
         //if (this.showLabels) {
-            label_elem = $('<td class="jqplot-table-legend-label" style="padding-top:'+rs+';" series_num='+series_num+'></td>');
+            label_elem = $('<td class="jqplot-table-legend-label" style="padding-top:'+rs+';"></td>');
             label_elem.appendTo(tr);
             if (this.escapeHtml) {
                 label_elem.text(label);
@@ -44,7 +44,7 @@
                 label_elem.html(label);
             }
         //}
-        tr.click({legend: this}, handleClick);
+        tr.click({legend: this, series_num: series_num}, handleClick);
         tr = null;
         elem = null;
         label_elem = null;
@@ -107,7 +107,8 @@
     function handleClick(ev) {
         if (debug) {console.log(ev);}
         if (ev.data && ev.data.legend && ev.data.legend.handleClick) {
-            ev.data.legend.handleClick(ev);
+            // pass the series index to the handler as the second arg:
+            ev.data.legend.handleClick(ev, ev.data.series_num);
         } 
     } 
     

@@ -107,8 +107,8 @@
     function handleClick(ev) {
         if (debug) {console.log(ev);}
         if (ev.data && ev.data.legend && ev.data.legend.handleClick) {
-            // pass the series index to the handler as the second arg:
-            ev.data.legend.handleClick(ev, ev.data.series_num);
+            // pass the series index to the handler in ev.data.series_num
+            ev.data.legend.handleClick(ev);
         } 
     } 
     

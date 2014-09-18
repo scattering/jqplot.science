@@ -390,8 +390,8 @@
     function set_data(new_data, new_dims) {
         this.dims = new_dims;
         
-        if (!('dx' in this.dims)){ this.dims.dx = (this.dims.xmax - this.dims.xmin)/(this.dims.xdim -1); }
-        if (!('dy' in this.dims)){ this.dims.dy = (this.dims.ymax - this.dims.ymin)/(this.dims.ydim -1); }
+        if (!('dx' in this.dims)){ this.dims.dx = (this.dims.xmax - this.dims.xmin)/(this.dims.xdim); }
+        if (!('dy' in this.dims)){ this.dims.dy = (this.dims.ymax - this.dims.ymin)/(this.dims.ydim); }
         this.source_data = [];
         //for (var i=0; i<this.dims.ydim; i++) {
         for (var i=0; i<new_data.length; i++) { 

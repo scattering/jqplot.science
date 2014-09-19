@@ -375,6 +375,7 @@
         var new_max;
         for (var i in array) {
             var subarr = array[i];
+            if (subarr == null) { return existing_max }
             if (subarr.length == undefined) {
                 var t_el = transform(subarr);
                 if (isFinite(t_el)) new_max = t_el;

@@ -1,11 +1,15 @@
 /**
- * jqplot.jquerymobile plugin
- * jQuery Mobile virtual event support.
- *
+ * jqplot.pinchZoom.js
+ * jqplot plugin to allow pinch-to-zoom on touch-enabled devices
+ * 
+ * Author: Brian B. Maranville
  * Version: @VERSION
  * Revision: @REVISION
  *
- * Copyright (c) 2011 Takashi Okamoto
+ * This plugin is in the public domain
+ *
+ *** JQPLOT: 
+ *
  * jqPlot is currently available for use in all personal or commercial projects 
  * under both the MIT (http://www.opensource.org/licenses/mit-license.php) and GPL 
  * version 2.0 (http://www.gnu.org/licenses/gpl-2.0.html) licenses. This means that you can 
@@ -198,23 +202,73 @@
         
         var center, dist;
         
+        var zoomPlot = function(dzoomx, dzoomy, centerpos) {
+            var center = getCoords(centerpos);
+            
+            var xtransf = plot.series[0]._xaxis.transform || 'lin';
+            var ytransf = plot.series[0]._yaxis.transform || 'lin';
+            var xmin = plot.series[0]._xaxis.min;
+            var xmax = plot.series[0]._xaxis.max;
+            var ymin = plot.series[0]._yaxis.min;
+            var ymax = plot.series[0]._yaxis.max;
+            if (!this.fix_x) {
+                xmin += (center.x - xmin) * dzoomx;
+                xmax += (center.x - xmax) * dzoomx;
+            }
+            if (!this.fix_y) {
+                ymin += (center.y - ymin) * dzoomy;
+                ymax += (center.y - ymax) * dzoomy;
+            }
+            plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
+            plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
+            plot.redraw();
+        }
+        
         var panPlot = function(prevpos, pos) {
             var newcoords = getCoords(pos);
             var prevcoords = getCoords(prevpos);
             var xtransf = plot.series[0]._xaxis.transform || 'lin';
             var ytransf = plot.series[0]._yaxis.transform || 'lin';
             
-            var dx = newcoords.x - prevcoords.x;
-            var dy = newcoords.y - prevcoords.y;
-
+            var dx = 1.0 * (newcoords.x - prevcoords.x);
+            var dy = 1.0 * (newcoords.y - prevcoords.y);
+            
             var xmin = plot.series[0]._xaxis.min - dx;
             var xmax = plot.series[0]._xaxis.max - dx;
             var ymin = plot.series[0]._yaxis.min - dy;
             var ymax = plot.series[0]._yaxis.max - dy;
+            
+            var xticks = generate_ticks({min:xmin, max:xmax}, xtransf);
+            var yticks = generate_ticks({min:ymin, max:ymax}, ytransf);
+            plot.series[0]._xaxis.ticks = xticks;
+            plot.series[0]._yaxis.ticks = yticks;
+            plot.redraw();
+        }
+        
+        var zoomAndPanPlot = function(prev_center, new_center, dzoomx, dzoomy) {
+            var newcoords = getCoords(new_center);
+            var prevcoords = getCoords(prev_center);
+            var xtransf = plot.series[0]._xaxis.transform || 'lin';
+            var ytransf = plot.series[0]._yaxis.transform || 'lin';
+            
+            var dx = -1.0 * (newcoords.x - prevcoords.x);
+            var dy = -1.0 * (newcoords.y - prevcoords.y);
+
+            var xmin = plot.series[0]._xaxis.min;
+            var xmax = plot.series[0]._xaxis.max;
+            var ymin = plot.series[0]._yaxis.min;
+            var ymax = plot.series[0]._yaxis.max;
+            if (!this.fix_x) {
+                xmin += dx + (newcoords.x - xmin) * dzoomx;
+                xmax += dx + (newcoords.x - xmax) * dzoomx;
+            }
+            if (!this.fix_y) {
+                ymin += dy + (newcoords.y - ymin) * dzoomy;
+                ymax += dy + (newcoords.y - ymax) * dzoomy;
+            }
 
             var xticks = generate_ticks({min:xmin, max:xmax}, xtransf);
             var yticks = generate_ticks({min:ymin, max:ymax}, ytransf);
-            $('#pan').html(JSON.stringify([xticks, yticks, plot._drawCount], 3));
             plot.series[0]._xaxis.ticks = xticks;
             plot.series[0]._yaxis.ticks = yticks;
             plot.redraw();
@@ -232,13 +286,10 @@
             center = {
                 x: ((t1.pageX + t2.pageX) / 2.0), 
                 y: ((t1.pageY + t2.pageY) / 2.0)};
-            plot.plugins.pinchZoom.center = center;
+            plot.plugins.pinchZoom.center = center;           
             plot.plugins.pinchZoom.touchmoves = 0;
             dist = {x: t1.pageX - t2.pageX, y: t1.pageY - t2.pageY}
-            document.getElementById('start').innerHTML = "center: " + JSON.stringify(center);
-            document.getElementById('start').innerHTML += " dist: " + JSON.stringify(dist);
-            document.getElementById('start').innerHTML += " offsetTop: " + JSON.stringify(plot.eventCanvas._ctx.canvas.offsetTop);
-            document.getElementById('start').innerHTML += " coords: " + JSON.stringify(getCoords(center));            
+            plot.plugins.pinchZoom.dist = dist;
             
         }
         
@@ -267,19 +318,22 @@
             var t1 = oev.touches[0];
             var t2 = oev.touches[1];
             var old_center = plot.plugins.pinchZoom.center;
+            var old_dist = plot.plugins.pinchZoom.dist;
             var new_center = {x: ((t1.pageX + t2.pageX) / 2.0), y: ((t1.pageY + t2.pageY) / 2.0)};
-            var new_dist = {x: t1.pageX - t2.pageX, y: t1.pageY - t2.pageY}
+            var new_dist = {x: t1.pageX - t2.pageX, y: t1.pageY - t2.pageY};
+            var rotation = Math.atan2(new_dist.x, new_dist.y); // not used for now
+            var old_length = Math.sqrt(old_dist.x * old_dist.x + old_dist.y * old_dist.y);
+            var new_length = Math.sqrt(new_dist.x * new_dist.x + new_dist.y * new_dist.y);
+            var dzoom = (old_length > 0) ? (new_length / old_length  - 1.0) : 0;
+            var dzoomx = dzoom * Math.abs(Math.sin(rotation));
+            var dzoomy = dzoom * Math.abs(Math.cos(rotation));
             var dcenter = {x: new_center.x - old_center.x, y: new_center.y - old_center.y};
-            var ddist = {x: new_dist.x - dist.x, y: new_dist.y - dist.y}
+            var ddist = {x: new_dist.x - old_dist.x, y: new_dist.y - dist.y}
             var move = document.getElementById('move');
-            move.innerHTML = "new_center: " + JSON.stringify(new_center);
-            move.innerHTML += "center: " + JSON.stringify(dcenter);
-            move.innerHTML += " dist: " + JSON.stringify(ddist);
-            move.innerHTML += "<br>" + t1.target.id;
-            move.innerHTML += "<br>" + t2.target.id;
-            move.innerHTML += "<br>" + (plot.plugins.pinchZoom.touchmoves++).toString();
-            //plot.plugins.pinchZoom.touches = oev.touches;
-            panPlot(old_center, new_center);
+            
+            zoomAndPanPlot(old_center, new_center, dzoomx, dzoomy);
+            plot.plugins.pinchZoom.center = new_center;
+            plot.plugins.pinchZoom.dist = new_dist;
             
         }
         
@@ -292,7 +346,7 @@
             plot.plugins.pinchZoom.handlersInitialized = true;
         }
         $(plot.eventCanvas._ctx.canvas).on("touchleave", handleTwoTouchLeave);
-        //$(plot.eventCanvas._ctx.canvas).on("touchend", function() {alert("all good things..."); });
+        /*
         if (plot.plugins.pinchZoom.touches) {
           try{
             var evt = document.createEvent('TouchEvent');
@@ -312,6 +366,7 @@
             alert(ex);
           }
         }
+        */
     }
     
     function postDraw() {

@@ -269,6 +269,10 @@
 
             var xticks = generate_ticks({min:xmin, max:xmax}, xtransf);
             var yticks = generate_ticks({min:ymin, max:ymax}, ytransf);
+            plot.series[0]._xaxis.min = xmin;
+            plot.series[0]._xaxis.max = xmax;
+            plot.series[0]._yaxis.min = ymin;
+            plot.series[0]._yaxis.max = ymax;
             plot.series[0]._xaxis.ticks = xticks;
             plot.series[0]._yaxis.ticks = yticks;
             plot.redraw();

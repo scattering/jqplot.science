@@ -298,9 +298,9 @@
         }
         
         var handleTwoTouchLeave = function(ev) {
-            var move = document.getElementById('move');
-            move.innerHTML += 'leave' ;
-            move.innerHTML += String(Object.keys(ev));
+            //var move = document.getElementById('move');
+            //move.innerHTML += 'leave' ;
+            //move.innerHTML += String(Object.keys(ev));
         
         }
         
@@ -333,7 +333,7 @@
             var dzoomy = dzoom * Math.abs(Math.cos(rotation));
             var dcenter = {x: new_center.x - old_center.x, y: new_center.y - old_center.y};
             var ddist = {x: new_dist.x - old_dist.x, y: new_dist.y - dist.y}
-            var move = document.getElementById('move');
+            //var move = document.getElementById('move');
             
             zoomAndPanPlot(old_center, new_center, dzoomx, dzoomy);
             plot.plugins.pinchZoom.center = new_center;

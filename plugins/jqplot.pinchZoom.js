@@ -287,12 +287,12 @@
             touchdown = [true, true];
             var t1 = oev.touches[0];
             var t2 = oev.touches[1];
-            center = {
+            var center = {
                 x: ((t1.pageX + t2.pageX) / 2.0), 
                 y: ((t1.pageY + t2.pageY) / 2.0)};
             plot.plugins.pinchZoom.center = center;           
             plot.plugins.pinchZoom.touchmoves = 0;
-            dist = {x: t1.pageX - t2.pageX, y: t1.pageY - t2.pageY}
+            var dist = {x: t1.pageX - t2.pageX, y: t1.pageY - t2.pageY}
             plot.plugins.pinchZoom.dist = dist;
             
         }

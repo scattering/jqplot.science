@@ -245,6 +245,11 @@
             plot.redraw();
         }
         
+        var triggerRedraw = function() {
+            plot.redraw();
+            plot.plugins.pinchZoom.redrawTriggered = null;
+        }
+        
         var zoomAndPanPlot = function(prev_center, new_center, dzoomx, dzoomy) {
             var newcoords = getCoords(new_center);
             var prevcoords = getCoords(prev_center);
@@ -275,7 +280,11 @@
             plot.series[0]._yaxis.max = ymax;
             plot.series[0]._xaxis.ticks = xticks;
             plot.series[0]._yaxis.ticks = yticks;
-            plot.redraw();
+            if (!(plot.plugins.pinchZoom.redrawTriggered)){
+                plot.plugins.pinchZoom.redrawTriggered = setTimeout(
+                    triggerRedraw, 1000.0/60.0);                    
+            }
+            //plot.redraw();
         }
     
         var handleTwoTouchStart = function(ev) {
@@ -314,7 +323,7 @@
         
         var handleTwoTouchMove = function(ev) {
             var oev = ev.originalEvent;
-            //if (oev.touches.length != 2) { return }
+            if (oev.touches.length != 2) { return }
             oev.preventDefault();
             oev.stopPropagation();
             //var t1 = oev.targetTouches[0];
@@ -341,12 +350,14 @@
             
         }
         
-        $(plot.eventCanvas._ctx.canvas).on("touchstart", handleTwoTouchStart);
+        //$(plot.eventCanvas._ctx.canvas).on("touchstart", handleTwoTouchStart);
         //plot.eventCanvas._ctx.canvas.ontouchstart = handleTwoTouchStart;
         //$(plot.eventCanvas._ctx.canvas).on("touchmove", handleTwoTouchMove);
         //$(plot.target).off("touchmove");
         if (!(plot.plugins.pinchZoom.handlersInitialized)) {
             $(plot.target).on("touchmove", handleTwoTouchMove);
+            $(plot.target).on("touchstart", handleTwoTouchStart);
+            
             plot.plugins.pinchZoom.handlersInitialized = true;
         }
         $(plot.eventCanvas._ctx.canvas).on("touchleave", handleTwoTouchLeave);

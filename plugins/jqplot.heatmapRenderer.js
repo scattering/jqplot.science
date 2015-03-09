@@ -173,6 +173,7 @@
         var height = ctx.canvas.height;
         ctx.clearRect(0,0, width, height);
         var myImageData = ctx.createImageData(width, height);
+        var data = myImageData.data;
         var sxu = this._xaxis.p2u(1) - this._xaxis.p2u(0);
         var syu = this._yaxis.p2u(1) - this._yaxis.p2u(0);
         var sxp = sxu / this.dims.dx;
@@ -190,14 +191,15 @@
                     if (dxp >=0 && dxp < this.dims.xdim) {
                         offset = suboffset + x*4;
                         fillstyle = this.palette_array[this.plotdata[dyp][dxp]];
-                        myImageData.data[offset++] = fillstyle[0];
-                        myImageData.data[offset++] = fillstyle[1];
-                        myImageData.data[offset++] = fillstyle[2];
-                        myImageData.data[offset++] = fillstyle[3];
+                        data[offset++] = fillstyle[0];
+                        data[offset++] = fillstyle[1];
+                        data[offset++] = fillstyle[2];
+                        data[offset++] = fillstyle[3];
                     }
                 }
             }
         }
+        myImageData.data = data;
         ctx.putImageData(myImageData, 0,0);
     };
     
@@ -389,7 +391,8 @@
         return existing_max
     };
     
-    function set_data(new_data, new_dims) {
+    function set_data(new_data, new_dims, defer_update) {
+        // adding defer_update parameter to allow deferred update
         this.dims = new_dims;
         
         if (!('dx' in this.dims)){ this.dims.dx = (this.dims.xmax - this.dims.xmin)/(this.dims.xdim); }
@@ -408,7 +411,9 @@
                         [this.dims.xmax, this.dims.ymin],
                         [this.dims.xmax, this.dims.ymax],
                         [this.dims.xmin, this.dims.ymax]];
-        this.update_plotdata();
+        if (!defer_update) {
+            this.update_plotdata();
+        }
         if (this.auto_histogram) {
             var hists = this.generate_histogram();
             this.hist = hists.hist;

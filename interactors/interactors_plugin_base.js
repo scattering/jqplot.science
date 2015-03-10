@@ -137,6 +137,7 @@
             this.color1 = '#6699ff';
             this.color2 = '#ff6699';
             this.color = this.color1;
+            this.alpha = 0.6;
             
             this.rc = 1;//Math.random();
             this.forceload = false; // make the master initialize, even if no other interactors
@@ -505,7 +506,7 @@
                 I.Canvas.setContext();
                 I.context = I.Canvas._ctx;
                 I.canvas = I.context.canvas;
-                I.context.globalAlpha = 0.6;
+                I.context.globalAlpha = master.alpha;
                 I.context.lineJoin = 'round';
                 //var ec = this.eventCanvas._ctx.canvas;
                 

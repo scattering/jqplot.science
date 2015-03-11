@@ -681,7 +681,9 @@
             //ctx.moveTo(this.x, this.y);
             var coords = this.coords;
             this.pos = this.putCoords();
-            ctx.fillText('(' + coords.x.toFixed(3) + ', ' + coords.y.toFixed(3) + ')', this.pos.x, this.pos.y - 5);
+            if (this.show_pos) {
+                ctx.fillText('(' + coords.x.toFixed(3) + ', ' + coords.y.toFixed(3) + ')', this.pos.x, this.pos.y - 5);
+            }
             //ctx.fillText('(' + this.pos.x.toFixed(0) + ', ' + this.pos.y.toFixed(0) + ')', this.pos.x, this.pos.y - 5);
             ctx.moveTo(this.pos.x + this.r, this.pos.y);
             ctx.lineTo(this.pos.x, this.pos.y + this.r);

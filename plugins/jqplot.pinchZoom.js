@@ -245,7 +245,7 @@
             plot.redraw();
         }
         
-        var triggerRedraw = function() {
+        var triggerRedraw = function(plot) {
             plot.redraw();
             plot.plugins.pinchZoom.redrawTriggered = null;
         }
@@ -280,11 +280,11 @@
             plot.series[0]._yaxis.max = ymax;
             plot.series[0]._xaxis.ticks = xticks;
             plot.series[0]._yaxis.ticks = yticks;
-            if (!(plot.plugins.pinchZoom.redrawTriggered)){
-                plot.plugins.pinchZoom.redrawTriggered = setTimeout(
-                    triggerRedraw, 1000.0/60.0);                    
-            }
-            //plot.redraw();
+            //if (!(plot.plugins.pinchZoom.redrawTriggered)){
+            //    plot.plugins.pinchZoom.redrawTriggered = setTimeout(
+            //        triggerRedraw, 1000.0/60.0);                    
+            //}
+            plot.redraw();
         }
     
         var handleTwoTouchStart = function(ev) {
@@ -296,12 +296,12 @@
             touchdown = [true, true];
             var t1 = oev.touches[0];
             var t2 = oev.touches[1];
-            center = {
+            var center = {
                 x: ((t1.pageX + t2.pageX) / 2.0), 
                 y: ((t1.pageY + t2.pageY) / 2.0)};
             plot.plugins.pinchZoom.center = center;           
             plot.plugins.pinchZoom.touchmoves = 0;
-            dist = {x: t1.pageX - t2.pageX, y: t1.pageY - t2.pageY}
+            var dist = {x: t1.pageX - t2.pageX, y: t1.pageY - t2.pageY}
             plot.plugins.pinchZoom.dist = dist;
             
         }
@@ -350,17 +350,99 @@
             
         }
         
+        var hs = function(evt, p) {
+            //alert('to touch');
+            if (evt.numtouches != 2) { return }
+            var touchdown = [true, true];
+            var t1 = oev.touches[0];
+            var t2 = oev.touches[1];
+            var center = {
+                x: ((evt.pageX[0] + evt.pageX[1]) / 2.0), 
+                y: ((evt.pageY[0] + evt.pageY[1]) / 2.0)};
+            p.plugins.pinchZoom.center = center;           
+            p.plugins.pinchZoom.touchmoves = 0;
+            var dist = {x: evt.pageX[0] - evt.pageX[1], y: evt.pageY[0] - evt.pageY[1]}
+            p.plugins.pinchZoom.dist = dist;
+            
+        }
+        
+        var zp = function(plot, prev_center, new_center, dzoomx, dzoomy) {
+            var newcoords = getCoords(new_center);
+            var prevcoords = getCoords(prev_center);
+            var xtransf = plot.series[0]._xaxis.transform || 'lin';
+            var ytransf = plot.series[0]._yaxis.transform || 'lin';
+            
+            var dx = -1.0 * (newcoords.x - prevcoords.x);
+            var dy = -1.0 * (newcoords.y - prevcoords.y);
+
+            var xmin = plot.series[0]._xaxis.min;
+            var xmax = plot.series[0]._xaxis.max;
+            var ymin = plot.series[0]._yaxis.min;
+            var ymax = plot.series[0]._yaxis.max;
+            if (!this.fix_x) {
+                xmin += dx + (newcoords.x - xmin) * dzoomx;
+                xmax += dx + (newcoords.x - xmax) * dzoomx;
+            }
+            if (!this.fix_y) {
+                ymin += dy + (newcoords.y - ymin) * dzoomy;
+                ymax += dy + (newcoords.y - ymax) * dzoomy;
+            }
+
+            var xticks = generate_ticks({min:xmin, max:xmax}, xtransf);
+            var yticks = generate_ticks({min:ymin, max:ymax}, ytransf);
+            plot.series[0]._xaxis.min = xmin;
+            plot.series[0]._xaxis.max = xmax;
+            plot.series[0]._yaxis.min = ymin;
+            plot.series[0]._yaxis.max = ymax;
+            plot.series[0]._xaxis.ticks = xticks;
+            plot.series[0]._yaxis.ticks = yticks;
+            //if (!(plot.plugins.pinchZoom.redrawTriggered)){
+            //    plot.plugins.pinchZoom.redrawTriggered = setTimeout(
+            //        triggerRedraw, 1000.0/60.0);                    
+            //}
+            plot.redraw();
+        }
+        
+        var hm = function(evt, p) {
+            if (evt.numtouches != 2) { return }
+            //var t1 = oev.touches[0];
+            //var t2 = oev.touches[1];
+            var old_center = p.plugins.pinchZoom.center;
+            var old_dist = p.plugins.pinchZoom.dist;
+            var new_center = {x: ((evt.pageX[0] + evt.pageX[1]) / 2.0), y: ((evt.pageY[0] + evt.pageY[1]) / 2.0)};
+            var new_dist = {x: evt.pageX[0] - evt.pageX[1], y: evt.pageY[0] - evt.pageY[1]};
+            var rotation = Math.atan2(new_dist.x, new_dist.y); // not used for now
+            var old_length = Math.sqrt(old_dist.x * old_dist.x + old_dist.y * old_dist.y);
+            var new_length = Math.sqrt(new_dist.x * new_dist.x + new_dist.y * new_dist.y);
+            var dzoom = (old_length > 0) ? (new_length / old_length  - 1.0) : 0;
+            var dzoomx = dzoom * Math.abs(Math.sin(rotation));
+            var dzoomy = dzoom * Math.abs(Math.cos(rotation));
+            var dcenter = {x: new_center.x - old_center.x, y: new_center.y - old_center.y};
+            var ddist = {x: new_dist.x - old_dist.x, y: new_dist.y - dist.y}
+            //var move = document.getElementById('move');
+            
+            zp(p, old_center, new_center, dzoomx, dzoomy);
+            p.plugins.pinchZoom.center = new_center;
+            p.plugins.pinchZoom.dist = new_dist;
+            
+        }
+        
         //$(plot.eventCanvas._ctx.canvas).on("touchstart", handleTwoTouchStart);
         //plot.eventCanvas._ctx.canvas.ontouchstart = handleTwoTouchStart;
         //$(plot.eventCanvas._ctx.canvas).on("touchmove", handleTwoTouchMove);
         //$(plot.target).off("touchmove");
         if (!(plot.plugins.pinchZoom.handlersInitialized)) {
-            $(plot.target).on("touchmove", handleTwoTouchMove);
-            $(plot.target).on("touchstart", handleTwoTouchStart);
+            //$(plot.target).on("touchmove", handleTwoTouchMove);
+            //$(plot.target).on("touchstart", handleTwoTouchStart);
             
+            plot.plugins.pinchZoom.handleTwoTouchStart = hs;
+            plot.plugins.pinchZoom.handleTwoTouchMove = hm;
             plot.plugins.pinchZoom.handlersInitialized = true;
+            //$.jqplot.eventListenerHooks.push(['jqplotTouchStart', hs]);
+            //$.jqplot.eventListenerHooks.push(['jqplotTouchMove', hm]);
         }
-        $(plot.eventCanvas._ctx.canvas).on("touchleave", handleTwoTouchLeave);
+        //$(plot.eventCanvas._ctx.canvas).on("touchleave", handleTwoTouchLeave);
+        
         /*
         if (plot.plugins.pinchZoom.touches) {
           try{
@@ -384,14 +466,116 @@
         */
     }
     
+    var getCoords = function(plot, pos) {
+        // have to correct for the fact that jqplot p2u calculates
+        // in terms of pixels with respect to outer (containing) canvas
+        // not the actual graph canvas...
+        var xpixel = pos.x + plot.eventCanvas._ctx.canvas.offsetLeft;
+        var ypixel = pos.y + plot.eventCanvas._ctx.canvas.offsetTop;
+        var coords = { x: plot.series[0]._xaxis.p2u(xpixel),
+                       y: plot.series[0]._yaxis.p2u(ypixel) }
+        return coords
+    }
+    
+    var hs = function(evt, p) {
+        //alert('to touch');
+        if (evt.numtouches != 2) { return }
+        var touchdown = [true, true];
+        var center = {
+            x: ((evt.pageX[0] + evt.pageX[1]) / 2.0), 
+            y: ((evt.pageY[0] + evt.pageY[1]) / 2.0)};
+        $('#start').html(JSON.stringify(center));
+        p.plugins.pinchZoom.center = center;           
+        p.plugins.pinchZoom.touchmoves = 0;
+        var dist = {x: Math.abs(evt.pageX[0] - evt.pageX[1]), y: Math.abs(evt.pageY[0] - evt.pageY[1])}
+        p.plugins.pinchZoom.dist = dist;        
+    }
+        
+    var zp = function(plot, prev_center, new_center, dzoomx, dzoomy) {
+        $('#move').html(JSON.stringify(new_center));
+        var newcoords = getCoords(plot, new_center);
+        var prevcoords = getCoords(plot, prev_center);
+        
+        var xtransf = plot.series[0]._xaxis.transform || 'lin';
+        var ytransf = plot.series[0]._yaxis.transform || 'lin';
+        
+        var dx = -1.0 * (newcoords.x - prevcoords.x);
+        var dy = -1.0 * (newcoords.y - prevcoords.y);
+
+        var xmin = plot.series[0]._xaxis.min;
+        var xmax = plot.series[0]._xaxis.max;
+        var ymin = plot.series[0]._yaxis.min;
+        var ymax = plot.series[0]._yaxis.max;
+        
+        if (!this.fix_x) {
+            xmin += dx + (newcoords.x - xmin) * dzoomx;
+            xmax += dx + (newcoords.x - xmax) * dzoomx;
+        }
+        if (!this.fix_y) {
+            ymin += dy + (newcoords.y - ymin) * dzoomy;
+            ymax += dy + (newcoords.y - ymax) * dzoomy;
+        }
+
+        var xticks = generate_ticks({min:xmin, max:xmax}, xtransf);
+        var yticks = generate_ticks({min:ymin, max:ymax}, ytransf);
+        $('#move').html(JSON.stringify(xticks));
+        plot.series[0]._xaxis.min = xmin;
+        plot.series[0]._xaxis.max = xmax;
+        plot.series[0]._yaxis.min = ymin;
+        plot.series[0]._yaxis.max = ymax;
+        plot.series[0]._xaxis.ticks = xticks;
+        plot.series[0]._yaxis.ticks = yticks;
+        
+        if (!(plot.plugins.pinchZoom.redrawTriggered)){
+            plot.plugins.pinchZoom.redrawTriggered = setTimeout(
+                function() { plot.redraw(); plot.plugins.pinchZoom.redrawTriggered = null; },
+                1000.0/60.0);                    
+        }
+        //plot.redraw();
+    }
+        
+    var hm = function(evt, p) {
+        document.title = "running hm";
+        if (evt.numtouches != 2) { return }
+        document.title = "2";
+        //var t1 = oev.touches[0];
+        //var t2 = oev.touches[1];
+        var old_center = p.plugins.pinchZoom.center;
+        var old_dist = p.plugins.pinchZoom.dist;
+        var new_center = {x: ((evt.pageX[0] + evt.pageX[1])/2.0), y: ((evt.pageY[0] + evt.pageY[1]) / 2.0)};
+        var new_dist = {x: Math.abs(evt.pageX[0] - evt.pageX[1]), y: Math.abs(evt.pageY[0] - evt.pageY[1])};
+        //$('#move').html(JSON.stringify(new_dist));
+        var rotation = Math.atan2(new_dist.x, new_dist.y); // not used for now
+        var old_length = Math.sqrt(old_dist.x * old_dist.x + old_dist.y * old_dist.y);
+        var new_length = Math.sqrt(new_dist.x * new_dist.x + new_dist.y * new_dist.y);
+        
+        var dzoom = (old_length > 0) ? (new_length / old_length  - 1.0) : 0;
+        var dzoomx = dzoom * Math.abs(Math.sin(rotation));
+        var dzoomy = dzoom * Math.abs(Math.cos(rotation));
+        
+        var dcenter = {x: new_center.x - old_center.x, y: new_center.y - old_center.y};
+        
+        var ddist = {x: new_dist.x - old_dist.x, y: new_dist.y - old_dist.y};
+        
+        //var move = document.getElementById('move');
+        zp(p, old_center, new_center, dzoomx, dzoomy);
+        p.plugins.pinchZoom.center = new_center;
+        p.plugins.pinchZoom.dist = new_dist;
+        
+    }
+    
     function postDraw() {
-        initializePinchZoom(this);
+        //initializePinchZoom(this);
+        
     }
     
     function postInit() {
         this.plugins.pinchZoom = {};
     }
-    $.jqplot.postDrawHooks.push(postDraw);
+    
+    $.jqplot.eventListenerHooks.push(['jqplotTouchStart', hs]);
+    $.jqplot.eventListenerHooks.push(['jqplotTouchMove', hm]);
+    //$.jqplot.postDrawHooks.push(postDraw);
     $.jqplot.postInitHooks.push(postInit);
     
 })(jQuery);

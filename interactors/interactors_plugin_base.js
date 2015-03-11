@@ -654,7 +654,9 @@
             ctx.beginPath();
             //var coords = this.getCoords();
             this.pos = this.putCoords();
-            ctx.fillText('(' + this.coords.x.toFixed(3) + ', ' + this.coords.y.toFixed(3) + ')', this.pos.x, this.pos.y - 5);
+            if (this.show_pos) {
+                ctx.fillText('(' + this.coords.x.toFixed(3) + ', ' + this.coords.y.toFixed(3) + ')', this.pos.x, this.pos.y - 5);
+            }
             ctx.arc(this.pos.x, this.pos.y, this.r, 0, Math.PI * 2, true);
             //ctx.closePath();
             //ctx.stroke();

@@ -370,12 +370,10 @@
             var ytransf = this.plot.series[0]._yaxis.transform || 'lin';
             var dx = newcoords.x - prevcoords.x;
             var dy = newcoords.y - prevcoords.y;
-            var xmin = this.plot.series[0]._xaxis.min - dx;
-            var xmax = this.plot.series[0]._xaxis.max - dx;
-            var ymin = this.plot.series[0]._yaxis.min - dy;
-            var ymax = this.plot.series[0]._yaxis.max - dy;
-            this.plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
-            this.plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
+            this.plot.series[0]._xaxis.min -= dx;
+            this.plot.series[0]._xaxis.max -= dx;
+            this.plot.series[0]._yaxis.min -= dy;
+            this.plot.series[0]._yaxis.max -= dy;            
             this.plot.redraw();
         },
         
@@ -384,15 +382,11 @@
         var ydb = this.plot.series[0]._yaxis._dataBounds;
         if ((xdb.min != null) && (xdb.max != null) && (ydb.min != null) && (ydb.max != null)) {
                 // zoom to the limits of the data, with good tick locations
-                var xmin = xdb.min;
-                var xmax = xdb.max;
-                var ymin = ydb.min;
-                var ymax = ydb.max;
-                var xtransf = this.plot.series[0]._xaxis.transform || 'lin';
-                var ytransf = this.plot.series[0]._yaxis.transform || 'lin';
-                this.plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
-                this.plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
-                this.plot.replot();
+                this.plot.series[0]._xaxis.min = xdb.min;
+                this.plot.series[0]._xaxis.max = xdb.max;
+                this.plot.series[0]._yaxis.min = ydb.min;
+                this.plot.series[0]._yaxis.max = ydb.max;
+                this.plot.redraw();
             }
         },
         
@@ -406,15 +400,13 @@
             var ymin = this.plot.series[0]._yaxis.min;
             var ymax = this.plot.series[0]._yaxis.max;
             if (!this.fix_x) {
-                xmin += (center.x - xmin) * dzoomx;
-                xmax += (center.x - xmax) * dzoomx;
+                this.plot.series[0]._xaxis.min += (center.x - xmin) * dzoomx;
+                this.plot.series[0]._xaxis.max += (center.x - xmax) * dzoomx;
             }
             if (!this.fix_y) {
-                ymin += (center.y - ymin) * dzoomy;
-                ymax += (center.y - ymax) * dzoomy;
+                this.plot.series[0]._yaxis.min += (center.y - ymin) * dzoomy;
+                this.plot.series[0]._yaxis.max += (center.y - ymax) * dzoomy;
             }
-            this.plot.series[0]._xaxis.ticks = generate_ticks({min:xmin, max:xmax}, xtransf);
-            this.plot.series[0]._yaxis.ticks = generate_ticks({min:ymin, max:ymax}, ytransf);
             this.plot.redraw();
         },
         

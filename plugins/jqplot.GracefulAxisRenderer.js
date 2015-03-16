@@ -78,9 +78,10 @@
             
         var min = ((this.min != null) ? this.min : initial_min);
         var max = ((this.max != null) ? this.max : initial_max);
-        var ytransform = plot._transform;
-        var xtransform = 'lin'; //for now
-        var transform = (name.slice(0,1) == 'x')? xtransform : ytransform;
+        //var ytransform = plot._transform;
+        //var xtransform = 'lin'; //for now
+        //var transform = (name.slice(0,1) == 'x')? xtransform : ytransform;
+        var transform = this.transform || 'lin';
         var ticks = generate_ticks({min: min, max: max}, transform, width, height, name, fontSize);
         this.ticks = ticks;
         $.jqplot.LinearAxisRenderer.prototype.createTicks.call(this, plot);

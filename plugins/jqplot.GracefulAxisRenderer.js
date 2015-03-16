@@ -147,9 +147,10 @@
         var newf;
         if      (f<1.0) { newf = 1 }
         else if (f<2.0) { newf = 2 }
-        else if (f<5.0) { newf = 5 }
-        else if (f<10.0) { newf = 10 }
-        else { newf = 20 };
+        else { newf = 5 }
+        //else if (f<5.0) { newf = 5 }
+        //else if (f<10.0) { newf = 10 }
+        //else { newf = 20 };
         return {value: newf * magnitude, label: newf.toFixed() + 'e' + expv.toFixed()}
         
 //        if (f<2.0) {return 2.0*magnitude;}

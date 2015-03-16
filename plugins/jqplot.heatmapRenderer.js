@@ -77,7 +77,12 @@
         if (this.draw_method == 'rect') { renderer.draw = renderer.draw_rect }
         else if (this.draw_method == 'function') { renderer.draw = renderer.draw_functional_blit }
         else if (this.draw_method == 'object') { renderer.draw = renderer.draw_object_blit }
-        else { renderer.draw = renderer.draw_blit } // default
+        else if (this.draw_method == 'backed') { 
+            renderer.draw = renderer.draw_blit_backed;
+            this._backing_dirty = false; // used only in draw_blit_backed
+            this._backing_canvas = null;
+        }
+        else { renderer.draw = renderer.draw_blit } // default      
         this.update_plotdata = update_plotdata;
         this.set_transform = set_transform;
         this.generate_histogram = generate_histogram;
@@ -201,6 +206,49 @@
         }
         myImageData.data = data;
         ctx.putImageData(myImageData, 0,0);
+    };
+    
+    $.jqplot.heatmapRenderer.prototype.draw_blit_backed = function (ctx, gd, options) {
+        // blit to a backing canvas, then draw that to the screen
+        ctx.clearRect(0,0, ctx.canvas.width, ctx.canvas.height);
+        var width = this.dims.xdim;
+        var height = this.dims.ydim;
+
+        if (this._backing_canvas == null) {
+            this._backing_canvas = document.createElement('canvas');
+        }
+        
+        if (this._backing_dirty) {
+            this._backing_dirty = false;
+            this._backing_canvas.width = this.dims.xdim;
+            this._backing_canvas.height = this.dims.ydim;
+            var backing_ctx = this._backing_canvas.getContext('2d');
+            var myImageData = backing_ctx.createImageData(this.dims.xdim, this.dims.ydim);
+            var data = myImageData.data;
+            var palette_array = this.palette_array;
+            var plotdata = this.plotdata;
+        
+            var y, yp, x, dyp, dxp, fillstyle, suboffset, offset;
+            for (y=0; y<height; y++) {
+                suboffset = y * width * 4;
+                yp = height - 1 - y;
+                for (x=0; x<width; x++) {
+                    offset = suboffset + x*4;
+                    fillstyle = palette_array[plotdata[yp][x]];
+                    data[offset++] = fillstyle[0];
+                    data[offset++] = fillstyle[1];
+                    data[offset++] = fillstyle[2];
+                    data[offset++] = fillstyle[3];
+                }
+            }
+            myImageData.data = data;
+            backing_ctx.putImageData(myImageData, 0,0);
+        }
+        
+        var sxdx = this.renderer.get_sxdx.call(this);
+        if (ctx.mozImageSmoothingEnabled) ctx.mozImageSmoothingEnabled = false;
+        if (ctx.imageSmoothingEnabled) ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(this._backing_canvas, sxdx.sx, sxdx.sy, sxdx.sw, sxdx.sh, sxdx.dx, sxdx.dy, sxdx.dw, sxdx.dh);
     };
     
     $.jqplot.heatmapRenderer.prototype.draw_functional_blit = function (ctx, gd, options) {
@@ -516,6 +564,9 @@
             //plotdata[r] = rowdata.slice();
         }
         this.plotdata = plotdata;
+        if (this.draw_method == 'backed') {
+            this._backing_dirty = true;
+        }
     };
     
     function generate_cumsums() {

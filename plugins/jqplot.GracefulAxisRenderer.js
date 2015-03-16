@@ -52,6 +52,7 @@
         var height = plot.grid._height;
         var name = this.name; // xaxis, x2axis, yaxis, y2axis...
         var fontSize;
+        // this should probably be replaced by a css rule:
         if (plot.options.axes[name].tickOptions && plot.options.axes[name].tickOptions.fontSize) {
             fontSize = plot.options.axes[name].tickOptions.fontSize;
         } else {

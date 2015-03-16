@@ -717,7 +717,11 @@ debug = false;
         },
         
         isInside: function(pos) {
-            return this.distanceTo(pos) <= this.width + 1;
+            if (!this.connectortranslatable) {
+                return false 
+            } else {
+                return this.distanceTo(pos) <= this.width + 1;
+            }
         },
         translateBy: function(dpos) {
             for (var p in this.points)
@@ -901,14 +905,14 @@ debug = false;
     $.jqplot.Circle.prototype = new $.jqplot.GrobConnector();
     $.jqplot.Circle.prototype.constructor = $.jqplot.Circle;    
     $.extend($.jqplot.Circle.prototype, {        
-        initialize: function(parent, c, p1, width) {
+        initialize: function(parent, c, p1, width, filled) {
             $.jqplot.GrobConnector.prototype.initialize.call(this, parent, width);
             this.name = 'circle';
             this.points = { p1: p1, c: c };
             this.p1 = p1;
             this.c = c;
             //this.c.parent = this;
-            this.filled = true;
+            this.filled = filled;
         },
         
         render: function(ctx) {
@@ -930,6 +934,9 @@ debug = false;
             return Math.atan2(p.y - this.c.pos.y, p.x - this.c.pos.x);
         },
         isInside: function(pos) {
+            if (!this.connectortranslatable) {
+                return false 
+            }
             var dd = dist(this.c.pos, pos) - dist(this.c.pos, this.p1.pos);
             if (!this.filled)
                 dd = Math.abs(dd);

@@ -43,8 +43,7 @@
         // prop: palette
         // palette to convert values to colors: default is "jet" (defined below in this file)
         this.palette_array = jet_array;
-        this.overflowColor = [0,0,0,0];
-        this.palette_array.push(this.overflowColor);     
+        this.overflowColor = [0,0,0,0];            
         this.transform = 'lin';
         // put series options in options.series (dims, etc.)
         var xdim = this.data.length;
@@ -57,6 +56,7 @@
         this.draw_method = 'blit';
         this.get_z = function(x,y) { return 10.0 * Math.pow(Math.sin(x), 2); }
         $.extend(true, this, options);
+        this.palette_array.push(this.overflowColor); 
         this._plot = plot;
         this._colorbar = null; // colorbar will hook in when initialized;
         

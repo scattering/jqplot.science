@@ -43,9 +43,6 @@ function renderImageColorbar2(parent_plot, plotid, cbar_options) {
         axes:{ 
             xaxis:{ tickOptions: {show: false} },
             y2axis:{
-                //label: 'Intensity',
-                labelRenderer: $.jqplot.CanvasAxisLabelRenderer,
-                tickRenderer: $.jqplot.CanvasAxisTickRenderer,
                 tickOptions: {
                     formatString: "%.3g",
                     _styles: {left: 5},

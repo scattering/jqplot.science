@@ -717,11 +717,7 @@ debug = false;
         },
         
         isInside: function(pos) {
-            if (!this.connectortranslatable) {
-                return false 
-            } else {
-                return this.distanceTo(pos) <= this.width + 1;
-            }
+            return this.distanceTo(pos) <= this.width + 1;
         },
         translateBy: function(dpos) {
             for (var p in this.points)
@@ -934,9 +930,6 @@ debug = false;
             return Math.atan2(p.y - this.c.pos.y, p.x - this.c.pos.x);
         },
         isInside: function(pos) {
-            if (!this.connectortranslatable) {
-                return false 
-            }
             var dd = dist(this.c.pos, pos) - dist(this.c.pos, this.p1.pos);
             if (!this.filled)
                 dd = Math.abs(dd);

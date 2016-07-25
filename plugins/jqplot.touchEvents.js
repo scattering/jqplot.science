@@ -5,6 +5,8 @@
  * Version: @VERSION
  * Revision: @REVISION
  *
+ * based on /plugins/jqplot.mobile.js in jqplot tree:
+ * 
  * Copyright (c) 2011 Takashi Okamoto
  * jqPlot is currently available for use in all personal or commercial projects 
  * under both the MIT (http://www.opensource.org/licenses/mit-license.php) and GPL 

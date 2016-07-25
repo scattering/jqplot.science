@@ -1,3 +1,11 @@
+/**
+ * Class: jqplot.InteractiveLegendRenderer
+ * Author: Brian Maranville
+ * 07/2014
+ * this program was created as part of the regular duties of a US government
+ * employee, and is in the public domain
+ */ 
+ 
 (function($) {
     // class $.jqplot.InteractiveLegendRenderer
     // The default legend renderer for jqPlot.
